@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Space Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["IBM Plex Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -57,11 +61,17 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        surface: "hsl(var(--surface))",
+        "surface-2": "hsl(var(--surface-2))",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        elev: "var(--shadow-elev)",
+        glow: "var(--shadow-glow)",
       },
       keyframes: {
         "accordion-down": {
@@ -80,10 +90,20 @@ export default {
             height: "0",
           },
         },
+        "float-y": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
+        "enter": {
+          from: { opacity: "0", transform: "translateY(10px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "float-y": "float-y 6s ease-in-out infinite",
+        enter: "enter 520ms cubic-bezier(0.2, 0.8, 0.2, 1)",
       },
     },
   },
