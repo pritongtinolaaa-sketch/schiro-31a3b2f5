@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Inbox, Mail, RotateCcw, Shield, Sparkles, Trash2 } from "lucide-react";
+import { Copy, Inbox, Mail, Shield, Sparkles, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -122,16 +122,7 @@ export default function TempMailApp() {
         setExpiresAt(saved.expiresAt);
         const d = domainFromAddress(saved.address);
         if (d) setSelectedDomain(d);
-        return;
       }
-
-      const created = await createInbox({ domain: selectedDomain });
-      setAddress(created.address);
-      setToken(created.token);
-      setExpiresAt(created.expiresAt);
-      saveInbox(created);
-    } catch (e: any) {
-      toast.error("Couldn't create inbox", { description: e?.message ?? "Please refresh and try again." });
     } finally {
       setLoadingInbox(false);
     }
@@ -165,7 +156,40 @@ export default function TempMailApp() {
     }
   };
 
+  const createEmail = async () => {
+    if (!selectedDomain) return;
+
+    const trimmed = localPart.trim();
+    const chosenLocalPart = trimmed.length ? trimmed : undefined;
+    if (chosenLocalPart) {
+      const ok = /^[a-z0-9][a-z0-9._-]{1,30}[a-z0-9]$/i.test(chosenLocalPart);
+      if (!ok) {
+        toast.error("Invalid email name", {
+          description: "Use letters/numbers plus . _ - (3–32 chars), and start/end with a letter or number.",
+        });
+        return;
+      }
+    }
+
+    setLoadingInbox(true);
+    try {
+      clearSavedInbox();
+      const created = await createInbox({ domain: selectedDomain, localPart: chosenLocalPart });
+      setAddress(created.address);
+      setToken(created.token);
+      setExpiresAt(created.expiresAt);
+      saveInbox(created);
+      setLocalPart("");
+      toast.success("Email created", { description: created.address });
+    } catch (e: any) {
+      toast.error("Couldn't create email", { description: e?.message ?? "Please try again." });
+    } finally {
+      setLoadingInbox(false);
+    }
+  };
+
   const regenerate = async () => {
+    if (!selectedDomain) return;
     setLoadingInbox(true);
     try {
       clearSavedInbox();
@@ -265,72 +289,19 @@ export default function TempMailApp() {
             </div>
 
             <div className="md:col-span-5">
-              <Card className="glass border-border/80 shadow-elev">
-                <div className="p-5 md:p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-xs text-muted-foreground">Your temporary address</div>
-                      <div className="mt-1 text-sm font-medium">
-                        <span className="text-mono">{address ?? (loadingInbox ? "Generating…" : "—")}</span>
-                      </div>
-                      {expiresAt ? (
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          Expires: {new Date(expiresAt).toLocaleString()}
-                        </div>
-                      ) : null}
-                    </div>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => void regenerate()}
-                      aria-label="Regenerate inbox"
-                      disabled={loadingInbox}
-                    >
-                      <RotateCcw />
-                    </Button>
-                  </div>
-
-                  <div className="mt-4 grid gap-2">
-                    <label className="text-xs text-muted-foreground">Address</label>
-                    <Input value={address ?? ""} readOnly className="text-mono" aria-label="Temporary email" />
-
-                    <div className="mt-1">
-                      <div className="text-xs text-muted-foreground">Choose domain</div>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {DOMAINS.map((d) => (
-                          <Button
-                            key={d}
-                            variant={d === selectedDomain ? "default" : "secondary"}
-                            size="sm"
-                            onClick={() => setSelectedDomain(d)}
-                            className="text-mono"
-                            disabled={loadingInbox}
-                          >
-                            @{d}
-                          </Button>
-                        ))}
-                      </div>
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        Domain applies next time you generate a new inbox.
-                      </div>
-                    </div>
-
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Button variant="glass" className="flex-1" onClick={copyAddress} disabled={!address}>
-                        <Copy /> Copy
-                      </Button>
-                      <Button variant="outline" className="flex-1" onClick={() => void clearInbox()} disabled={!address}>
-                        <Trash2 /> Clear
-                      </Button>
-                    </div>
-
-                    <div className="mt-2 rounded-lg border bg-background/60 p-3 text-xs text-muted-foreground">
-                      Tip: “Receive test email” inserts a real message in your backend inbox. To receive external emails,
-                      connect an inbound mail provider to the webhook function.
-                    </div>
-                  </div>
-                </div>
-              </Card>
+              <InboxCreatorCard
+                loadingInbox={loadingInbox}
+                address={address}
+                expiresAt={expiresAt}
+                selectedDomain={selectedDomain}
+                onSelectedDomainChange={setSelectedDomain}
+                localPart={localPart}
+                onLocalPartChange={setLocalPart}
+                onCreate={() => void createEmail()}
+                onRegenerate={() => void regenerate()}
+                onCopy={() => void copyAddress()}
+                onClear={() => void clearInbox()}
+              />
             </div>
           </div>
         </div>
