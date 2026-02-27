@@ -155,11 +155,13 @@ export default function TempMailApp() {
 
   const deleteActive = () => {
     if (!active) return;
-    setEmails((prev) => prev.filter((e) => e.id !== active.id));
-    setActiveId((prev) => {
-      const remaining = emails.filter((e) => e.id !== active.id);
-      return remaining[0]?.id ?? null;
+
+    setEmails((prev) => {
+      const remaining = prev.filter((e) => e.id !== active.id);
+      setActiveId(remaining[0]?.id ?? null);
+      return remaining;
     });
+
     toast("Deleted", { description: "Message removed from this inbox." });
   };
 
