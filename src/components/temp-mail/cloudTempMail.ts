@@ -45,9 +45,9 @@ export function clearSavedInbox() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-export async function createInbox(): Promise<CreateInboxResponse> {
+export async function createInbox(input?: { domain?: string }): Promise<CreateInboxResponse> {
   const { data, error } = await supabase.functions.invoke<CreateInboxResponse>("temp-mail-create-inbox", {
-    body: {},
+    body: { domain: input?.domain },
   });
   if (error) throw error;
   if (!data?.address || !data?.token || !data?.expiresAt) throw new Error("Invalid response");
