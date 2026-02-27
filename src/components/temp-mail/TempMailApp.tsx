@@ -330,6 +330,7 @@ export default function TempMailApp() {
                       connect an inbound mail provider to the webhook function.
                     </div>
                   </div>
+                </div>
               </Card>
             </div>
           </div>
