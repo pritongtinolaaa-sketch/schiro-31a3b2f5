@@ -55,17 +55,45 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
 
     let chosenDomain: Domain | null = null;
+    let chosenLocalPart: string | null = null;
+
     try {
       const body = await req.json().catch(() => ({}));
       if (isAllowedDomain(body?.domain)) chosenDomain = body.domain;
+      if (typeof body?.localPart === "string") chosenLocalPart = body.localPart.trim() || null;
     } catch {
       // ignore
     }
 
+    if (!chosenDomain) {
+      return new Response(JSON.stringify({ error: "Domain is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Allow user-chosen name with safe chars.
+    if (chosenLocalPart) {
+      const ok = /^[a-z0-9][a-z0-9._-]{1,30}[a-z0-9]$/i.test(chosenLocalPart);
+      if (!ok) {
+        return new Response(
+          JSON.stringify({
+            error:
+              "Invalid email name. Use letters/numbers plus . _ - (3–32 chars), and start/end with a letter or number.",
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+    }
+
     // Try a few times to avoid unique collisions.
     for (let i = 0; i < 5; i++) {
-      const domain = chosenDomain ?? randomDomain();
-      const address = `${randomLocalPart()}@${domain}`;
+      const domain = chosenDomain;
+      const localPart = chosenLocalPart ?? randomLocalPart();
+      const address = `${localPart}@${domain}`;
       const token = randomToken();
       const tokenHash = await sha256Base64Url(token);
 
