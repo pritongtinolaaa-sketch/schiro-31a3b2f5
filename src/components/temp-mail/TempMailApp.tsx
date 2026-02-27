@@ -1,41 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  Copy,
-  Inbox,
-  Mail,
-  RotateCcw,
-  Shield,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
+import { Copy, Inbox, Mail, RotateCcw, Shield, Sparkles, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-type EmailItem = {
-  id: string;
-  from: string;
-  subject: string;
-  preview: string;
-  receivedAt: number; // epoch ms
-  body: string;
-};
-
-const DOMAINS = ["mailshed.dev", "inboxfwd.net", "tempbox.one"] as const;
-
-type Domain = (typeof DOMAINS)[number];
-
-function randomLocalPart() {
-  const adjectives = ["quiet", "mint", "rapid", "paper", "neon", "civic", "lunar", "pixel", "soft", "delta"];
-  const nouns = ["fox", "relay", "atlas", "spark", "window", "signal", "orbit", "thread", "vault", "kite"];
-  const a = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const n = nouns[Math.floor(Math.random() * nouns.length)];
-  const num = String(Math.floor(Math.random() * 9000) + 1000);
-  return `${a}.${n}${num}`;
-}
+import {
+  clearInboxRemote,
+  clearSavedInbox,
+  createInbox,
+  deleteMessage,
+  listMessages,
+  loadSavedInbox,
+  saveInbox,
+  sendTestEmail,
+  subscribeToInbox,
+  type TempMailMessage,
+} from "./cloudTempMail";
 
 function formatTime(ts: number) {
   const d = new Date(ts);
@@ -45,34 +28,6 @@ function formatTime(ts: number) {
     month: "short",
     day: "2-digit",
   });
-}
-
-function makeDemoEmail(now: number): EmailItem {
-  const senders = [
-    "no-reply@streamvault.app",
-    "security@cloud-notify.io",
-    "newsletter@tinytools.co",
-    "team@patchnotes.dev",
-  ];
-  const subjects = [
-    "Your one-time code",
-    "New login detected",
-    "Welcome — here’s your link",
-    "Weekly digest: 5 small wins",
-  ];
-  const from = senders[Math.floor(Math.random() * senders.length)];
-  const subject = subjects[Math.floor(Math.random() * subjects.length)];
-  const code = String(Math.floor(Math.random() * 900000) + 100000);
-  const body = `Hi there,\n\nThis is a simulated message in your temporary inbox.\n\nVerification code: ${code}\n\nIf you did not request this, you can safely ignore it.\n\n— Temp Mail Demo`;
-
-  return {
-    id: crypto.randomUUID(),
-    from,
-    subject,
-    preview: body.split("\n")[2] ?? body.slice(0, 60),
-    receivedAt: now,
-    body,
-  };
 }
 
 function usePrefersReducedMotion() {
@@ -93,15 +48,15 @@ function usePrefersReducedMotion() {
 export default function TempMailApp() {
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  const [domain, setDomain] = useState<Domain>(DOMAINS[0]);
-  const [local, setLocal] = useState(() => randomLocalPart());
-  const address = useMemo(() => `${local}@${domain}`, [local, domain]);
+  const [address, setAddress] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
 
-  const [emails, setEmails] = useState<EmailItem[]>(() => {
-    const now = Date.now();
-    return [makeDemoEmail(now - 1000 * 60 * 12), makeDemoEmail(now - 1000 * 60 * 60 * 3)];
-  });
-  const [activeId, setActiveId] = useState<string | null>(emails[0]?.id ?? null);
+  const [loadingInbox, setLoadingInbox] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+
+  const [emails, setEmails] = useState<TempMailMessage[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeId && emails[0]?.id) setActiveId(emails[0].id);
@@ -129,46 +84,127 @@ export default function TempMailApp() {
     return () => el.removeEventListener("pointermove", onMove);
   }, [prefersReducedMotion]);
 
+  const refreshMessages = async (opts?: { silent?: boolean }) => {
+    if (!address || !token) return;
+    if (!opts?.silent) setLoadingMessages(true);
+
+    try {
+      const res = await listMessages({ address, token });
+      setEmails(res.messages);
+      setExpiresAt(res.expiresAt);
+    } catch (e: any) {
+      toast.error("Couldn't load inbox", { description: e?.message ?? "Please try again." });
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const ensureInbox = async () => {
+    setLoadingInbox(true);
+    try {
+      const saved = loadSavedInbox();
+      if (saved) {
+        setAddress(saved.address);
+        setToken(saved.token);
+        setExpiresAt(saved.expiresAt);
+        return;
+      }
+
+      const created = await createInbox();
+      setAddress(created.address);
+      setToken(created.token);
+      setExpiresAt(created.expiresAt);
+      saveInbox(created);
+    } catch (e: any) {
+      toast.error("Couldn't create inbox", { description: e?.message ?? "Please refresh and try again." });
+    } finally {
+      setLoadingInbox(false);
+    }
+  };
+
+  useEffect(() => {
+    void ensureInbox();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!address || !token) return;
+    void refreshMessages({ silent: true });
+
+    const unsubscribe = subscribeToInbox(address, () => {
+      void refreshMessages({ silent: true });
+      toast.success("New message received", { description: "Your inbox updated in realtime." });
+    });
+
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, token]);
+
   const copyAddress = async () => {
+    if (!address) return;
     try {
       await navigator.clipboard.writeText(address);
       toast.success("Copied address", { description: address });
     } catch {
-      toast.error("Couldn’t copy", { description: "Your browser blocked clipboard access." });
+      toast.error("Couldn't copy", { description: "Your browser blocked clipboard access." });
     }
   };
 
-  const regenerate = () => {
-    setLocal(randomLocalPart());
-    setEmails([]);
-    setActiveId(null);
-    toast("New inbox generated", { description: "Your previous inbox was cleared." });
+  const regenerate = async () => {
+    setLoadingInbox(true);
+    try {
+      clearSavedInbox();
+      const created = await createInbox();
+      setAddress(created.address);
+      setToken(created.token);
+      setExpiresAt(created.expiresAt);
+      saveInbox(created);
+      setEmails([]);
+      setActiveId(null);
+      toast("New inbox generated", { description: "Your previous inbox was cleared." });
+    } catch (e: any) {
+      toast.error("Couldn't generate inbox", { description: e?.message ?? "Please try again." });
+    } finally {
+      setLoadingInbox(false);
+    }
   };
 
-  const receiveTestEmail = () => {
-    const now = Date.now();
-    const next = makeDemoEmail(now);
-    setEmails((prev) => [next, ...prev]);
-    setActiveId(next.id);
-    toast.success("New message received", { description: "(Simulated for this demo UI)" });
+  const receiveTestEmail = async () => {
+    if (!address || !token) return;
+    try {
+      await sendTestEmail({ address, token });
+      toast.success("Test email sent", { description: "Delivered to your inbox." });
+      // Realtime will refresh; we also do a quick optimistic refresh in case websocket is slow.
+      void refreshMessages({ silent: true });
+    } catch (e: any) {
+      toast.error("Couldn't send test email", { description: e?.message ?? "Please try again." });
+    }
   };
 
-  const deleteActive = () => {
-    if (!active) return;
+  const deleteActive = async () => {
+    if (!active || !address || !token) return;
 
-    setEmails((prev) => {
-      const remaining = prev.filter((e) => e.id !== active.id);
-      setActiveId(remaining[0]?.id ?? null);
-      return remaining;
-    });
-
-    toast("Deleted", { description: "Message removed from this inbox." });
+    try {
+      await deleteMessage({ address, token, messageId: active.id });
+      toast("Deleted", { description: "Message removed from this inbox." });
+      setActiveId(null);
+      await refreshMessages({ silent: true });
+    } catch (e: any) {
+      toast.error("Couldn't delete", { description: e?.message ?? "Please try again." });
+    }
   };
 
-  const clearInbox = () => {
-    setEmails([]);
-    setActiveId(null);
-    toast("Inbox cleared");
+  const clearInbox = async () => {
+    if (!address || !token) return;
+
+    try {
+      await clearInboxRemote({ address, token });
+      toast("Inbox cleared");
+      setEmails([]);
+      setActiveId(null);
+    } catch (e: any) {
+      toast.error("Couldn't clear", { description: e?.message ?? "Please try again." });
+    }
   };
 
   return (
@@ -180,32 +216,35 @@ export default function TempMailApp() {
             <div className="md:col-span-7">
               <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow-elev">
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>Instant inbox • no signup • demo UI</span>
+                <span>Real inbox • persisted • realtime updates</span>
               </div>
               <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight md:text-5xl">
-                Temporary email, with a clean inbox you can actually use.
+                Temporary email, now with persistence and realtime delivery.
               </h1>
               <p className="mt-3 max-w-2xl text-pretty text-base text-muted-foreground md:text-lg">
-                Generate a disposable address, copy it in one click, and watch messages appear. This first version is
-                front-end only (no real email receiving yet).
+                Your inbox is stored in the backend and updates live when new mail arrives. Keep this tab open to watch
+                messages stream in.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Button variant="hero" onClick={receiveTestEmail}>
+                <Button variant="hero" onClick={receiveTestEmail} disabled={loadingInbox || !address}>
                   <Inbox /> Receive test email
                 </Button>
-                <Button variant="glass" onClick={copyAddress}>
+                <Button variant="glass" onClick={copyAddress} disabled={!address}>
                   <Copy /> Copy address
+                </Button>
+                <Button variant="secondary" onClick={() => void refreshMessages()} disabled={loadingMessages || !address}>
+                  Refresh
                 </Button>
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3 text-sm text-muted-foreground">
                 <div className="inline-flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  <span>Disposable by default</span>
+                  <span>Private via access token</span>
                 </div>
                 <div className="inline-flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  <span>Preview + full message view</span>
+                  <span>Broadcast-driven updates</span>
                 </div>
               </div>
             </div>
@@ -217,50 +256,35 @@ export default function TempMailApp() {
                     <div>
                       <div className="text-xs text-muted-foreground">Your temporary address</div>
                       <div className="mt-1 text-sm font-medium">
-                        <span className="text-mono">{address}</span>
+                        <span className="text-mono">{address ?? (loadingInbox ? "Generating…" : "—")}</span>
                       </div>
+                      {expiresAt ? (
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          Expires: {new Date(expiresAt).toLocaleString()}
+                        </div>
+                      ) : null}
                     </div>
-                    <Button size="icon" variant="outline" onClick={regenerate} aria-label="Regenerate inbox">
+                      <Button variant="outline" size="sm" onClick={() => void regenerate()} aria-label="Regenerate inbox" disabled={loadingInbox}>
                       <RotateCcw />
                     </Button>
                   </div>
 
                   <div className="mt-4 grid gap-2">
-                    <label className="text-xs text-muted-foreground">Local part</label>
-                    <Input
-                      value={local}
-                      onChange={(e) => setLocal(e.target.value.replace(/\s+/g, "").slice(0, 32))}
-                      className="text-mono"
-                      placeholder="your.name"
-                      inputMode="text"
-                      aria-label="Local part"
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      {DOMAINS.map((d) => (
-                        <Button
-                          key={d}
-                          variant={d === domain ? "default" : "secondary"}
-                          size="sm"
-                          onClick={() => setDomain(d)}
-                          className="text-mono"
-                        >
-                          @{d}
-                        </Button>
-                      ))}
-                    </div>
+                    <label className="text-xs text-muted-foreground">Address (read-only)</label>
+                    <Input value={address ?? ""} readOnly className="text-mono" aria-label="Temporary email" />
 
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <Button variant="glass" className="flex-1" onClick={copyAddress}>
+                      <Button variant="glass" className="flex-1" onClick={copyAddress} disabled={!address}>
                         <Copy /> Copy
                       </Button>
-                      <Button variant="outline" className="flex-1" onClick={clearInbox}>
+                      <Button variant="outline" className="flex-1" onClick={() => void clearInbox()} disabled={!address}>
                         <Trash2 /> Clear
                       </Button>
                     </div>
 
                     <div className="mt-2 rounded-lg border bg-background/60 p-3 text-xs text-muted-foreground">
-                      Tip: click <span className="font-medium">Receive test email</span> to simulate deliveries while the
-                      real backend is not connected.
+                      Tip: "Receive test email" inserts a real message in your backend inbox. To receive external emails,
+                      connect an inbound mail provider to the webhook function.
                     </div>
                   </div>
                 </div>
@@ -278,7 +302,7 @@ export default function TempMailApp() {
                 <div className="text-sm font-medium">Inbox</div>
                 <div className="text-xs text-muted-foreground">{emails.length} message(s)</div>
               </div>
-              <Button variant="secondary" size="sm" onClick={receiveTestEmail}>
+              <Button variant="secondary" size="sm" onClick={receiveTestEmail} disabled={loadingInbox || !address}>
                 <Inbox /> Receive
               </Button>
             </div>
@@ -292,7 +316,7 @@ export default function TempMailApp() {
                       No messages yet
                     </div>
                     <p className="mt-2 text-sm text-muted-foreground">
-                      Use this address on a signup form, or press “Receive” to simulate an incoming email.
+                      Use this address on a signup form, or press "Receive" to deliver a real test email.
                     </p>
                   </div>
                 </div>
@@ -333,9 +357,9 @@ export default function TempMailApp() {
             <div className="flex items-center justify-between gap-4 border-b p-4">
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium">Message</div>
-                <div className="truncate text-xs text-muted-foreground text-mono">{address}</div>
+                <div className="truncate text-xs text-muted-foreground text-mono">{address ?? "—"}</div>
               </div>
-              <Button variant="outline" size="sm" onClick={deleteActive} disabled={!active}>
+              <Button variant="outline" size="sm" onClick={() => void deleteActive()} disabled={!active}>
                 <Trash2 /> Delete
               </Button>
             </div>
@@ -356,16 +380,14 @@ export default function TempMailApp() {
                   </div>
 
                   <div className="mt-5 rounded-xl border bg-background p-4 shadow-sm">
-                    <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                      {active.body}
-                    </pre>
+                    <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{active.body}</pre>
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <Button variant="glass" onClick={copyAddress}>
+                    <Button variant="glass" onClick={copyAddress} disabled={!address}>
                       <Copy /> Copy address
                     </Button>
-                    <Button variant="secondary" onClick={receiveTestEmail}>
+                    <Button variant="secondary" onClick={receiveTestEmail} disabled={loadingInbox || !address}>
                       <Inbox /> Receive another
                     </Button>
                   </div>
@@ -377,8 +399,8 @@ export default function TempMailApp() {
 
         <footer className="mt-10 border-t pt-6 text-xs text-muted-foreground">
           <p>
-            This is a UI prototype. To receive real emails, we can enable Lovable Cloud and connect it to an email
-            receiving provider or implement an inbox API.
+            Backend is enabled via Lovable Cloud. Next: connect an inbound email provider to the webhook so real external
+            emails are ingested automatically.
           </p>
         </footer>
       </main>
