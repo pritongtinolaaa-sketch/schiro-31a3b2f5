@@ -68,6 +68,16 @@ export async function sendTestEmail(input: { address: string; token: string }) {
   if (error) throw error;
 }
 
+export async function deleteMessage(input: { address: string; token: string; messageId: string }) {
+  const { error } = await supabase.functions.invoke("temp-mail-delete-message", { body: input });
+  if (error) throw error;
+}
+
+export async function clearInboxRemote(input: { address: string; token: string }) {
+  const { error } = await supabase.functions.invoke("temp-mail-clear-inbox", { body: input });
+  if (error) throw error;
+}
+
 export function subscribeToInbox(address: string, onNewMail: () => void) {
   const channel = supabase
     .channel(`inbox:${address}`)

@@ -8,8 +8,10 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 import {
+  clearInboxRemote,
   clearSavedInbox,
   createInbox,
+  deleteMessage,
   listMessages,
   loadSavedInbox,
   saveInbox,
@@ -179,23 +181,30 @@ export default function TempMailApp() {
     }
   };
 
-  const deleteActive = () => {
-    // Keeping UI-only delete for now; backend delete can be added next.
-    if (!active) return;
+  const deleteActive = async () => {
+    if (!active || !address || !token) return;
 
-    setEmails((prev) => {
-      const remaining = prev.filter((e) => e.id !== active.id);
-      setActiveId(remaining[0]?.id ?? null);
-      return remaining;
-    });
-
-    toast("Deleted", { description: "Removed locally (backend delete not enabled yet)." });
+    try {
+      await deleteMessage({ address, token, messageId: active.id });
+      toast("Deleted", { description: "Message removed from this inbox." });
+      setActiveId(null);
+      await refreshMessages({ silent: true });
+    } catch (e: any) {
+      toast.error("Couldn't delete", { description: e?.message ?? "Please try again." });
+    }
   };
 
-  const clearInbox = () => {
-    setEmails([]);
-    setActiveId(null);
-    toast("Cleared locally", { description: "Backend clear can be added next." });
+  const clearInbox = async () => {
+    if (!address || !token) return;
+
+    try {
+      await clearInboxRemote({ address, token });
+      toast("Inbox cleared");
+      setEmails([]);
+      setActiveId(null);
+    } catch (e: any) {
+      toast.error("Couldn't clear", { description: e?.message ?? "Please try again." });
+    }
   };
 
   return (
@@ -255,13 +264,7 @@ export default function TempMailApp() {
                         </div>
                       ) : null}
                     </div>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => void regenerate()}
-                      aria-label="Regenerate inbox"
-                      disabled={loadingInbox}
-                    >
+                      <Button variant="outline" size="sm" onClick={() => void regenerate()} aria-label="Regenerate inbox" disabled={loadingInbox}>
                       <RotateCcw />
                     </Button>
                   </div>
@@ -274,8 +277,8 @@ export default function TempMailApp() {
                       <Button variant="glass" className="flex-1" onClick={copyAddress} disabled={!address}>
                         <Copy /> Copy
                       </Button>
-                      <Button variant="outline" className="flex-1" onClick={clearInbox}>
-                        <Trash2 /> Clear (local)
+                      <Button variant="outline" className="flex-1" onClick={() => void clearInbox()} disabled={!address}>
+                        <Trash2 /> Clear
                       </Button>
                     </div>
 
@@ -356,7 +359,7 @@ export default function TempMailApp() {
                 <div className="truncate text-sm font-medium">Message</div>
                 <div className="truncate text-xs text-muted-foreground text-mono">{address ?? "—"}</div>
               </div>
-              <Button variant="outline" size="sm" onClick={deleteActive} disabled={!active}>
+              <Button variant="outline" size="sm" onClick={() => void deleteActive()} disabled={!active}>
                 <Trash2 /> Delete
               </Button>
             </div>
