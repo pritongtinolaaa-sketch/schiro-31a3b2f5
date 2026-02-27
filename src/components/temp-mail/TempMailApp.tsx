@@ -58,8 +58,8 @@ function domainFromAddress(address: string): Domain | null {
 export default function TempMailApp() {
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  const [selectedDomain, setSelectedDomain] = useState<Domain>(DOMAINS[0]);
-
+  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
+  const [localPart, setLocalPart] = useState("");
 
   const [address, setAddress] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
