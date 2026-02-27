@@ -14,7 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      temp_mail_inboxes: {
+        Row: {
+          created_at: string
+          email_address: string
+          expires_at: string
+          id: string
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          email_address: string
+          expires_at?: string
+          id?: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          email_address?: string
+          expires_at?: string
+          id?: string
+          token_hash?: string
+        }
+        Relationships: []
+      }
+      temp_mail_messages: {
+        Row: {
+          body: string
+          from_address: string
+          id: string
+          inbox_id: string
+          received_at: string
+          subject: string
+        }
+        Insert: {
+          body: string
+          from_address: string
+          id?: string
+          inbox_id: string
+          received_at?: string
+          subject: string
+        }
+        Update: {
+          body?: string
+          from_address?: string
+          id?: string
+          inbox_id?: string
+          received_at?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "temp_mail_messages_inbox_id_fkey"
+            columns: ["inbox_id"]
+            isOneToOne: false
+            referencedRelation: "temp_mail_inboxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
