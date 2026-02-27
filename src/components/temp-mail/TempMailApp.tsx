@@ -20,6 +20,10 @@ import {
   type TempMailMessage,
 } from "./cloudTempMail";
 
+const DOMAINS = ["mailshed.dev", "inboxfwd.net", "tempbox.one"] as const;
+
+type Domain = (typeof DOMAINS)[number];
+
 function formatTime(ts: number) {
   const d = new Date(ts);
   return d.toLocaleString(undefined, {
@@ -45,8 +49,18 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
+function domainFromAddress(address: string): Domain | null {
+  const at = address.lastIndexOf("@");
+  if (at === -1) return null;
+  const d = address.slice(at + 1);
+  return (DOMAINS as readonly string[]).includes(d) ? (d as Domain) : null;
+}
+
 export default function TempMailApp() {
   const prefersReducedMotion = usePrefersReducedMotion();
+
+  const [selectedDomain, setSelectedDomain] = useState<Domain>(DOMAINS[0]);
+
 
   const [address, setAddress] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -107,10 +121,12 @@ export default function TempMailApp() {
         setAddress(saved.address);
         setToken(saved.token);
         setExpiresAt(saved.expiresAt);
+        const d = domainFromAddress(saved.address);
+        if (d) setSelectedDomain(d);
         return;
       }
 
-      const created = await createInbox();
+      const created = await createInbox({ domain: selectedDomain });
       setAddress(created.address);
       setToken(created.token);
       setExpiresAt(created.expiresAt);
@@ -154,7 +170,7 @@ export default function TempMailApp() {
     setLoadingInbox(true);
     try {
       clearSavedInbox();
-      const created = await createInbox();
+      const created = await createInbox({ domain: selectedDomain });
       setAddress(created.address);
       setToken(created.token);
       setExpiresAt(created.expiresAt);
@@ -264,14 +280,41 @@ export default function TempMailApp() {
                         </div>
                       ) : null}
                     </div>
-                      <Button variant="outline" size="sm" onClick={() => void regenerate()} aria-label="Regenerate inbox" disabled={loadingInbox}>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => void regenerate()}
+                      aria-label="Regenerate inbox"
+                      disabled={loadingInbox}
+                    >
                       <RotateCcw />
                     </Button>
                   </div>
 
                   <div className="mt-4 grid gap-2">
-                    <label className="text-xs text-muted-foreground">Address (read-only)</label>
+                    <label className="text-xs text-muted-foreground">Address</label>
                     <Input value={address ?? ""} readOnly className="text-mono" aria-label="Temporary email" />
+
+                    <div className="mt-1">
+                      <div className="text-xs text-muted-foreground">Choose domain</div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {DOMAINS.map((d) => (
+                          <Button
+                            key={d}
+                            variant={d === selectedDomain ? "default" : "secondary"}
+                            size="sm"
+                            onClick={() => setSelectedDomain(d)}
+                            className="text-mono"
+                            disabled={loadingInbox}
+                          >
+                            @{d}
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Domain applies next time you generate a new inbox.
+                      </div>
+                    </div>
 
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Button variant="glass" className="flex-1" onClick={copyAddress} disabled={!address}>
@@ -283,7 +326,7 @@ export default function TempMailApp() {
                     </div>
 
                     <div className="mt-2 rounded-lg border bg-background/60 p-3 text-xs text-muted-foreground">
-                      Tip: "Receive test email" inserts a real message in your backend inbox. To receive external emails,
+                      Tip: “Receive test email” inserts a real message in your backend inbox. To receive external emails,
                       connect an inbound mail provider to the webhook function.
                     </div>
                   </div>

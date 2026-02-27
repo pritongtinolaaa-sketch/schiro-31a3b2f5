@@ -24,6 +24,10 @@ function randomDomain(): Domain {
   return DOMAINS[Math.floor(Math.random() * DOMAINS.length)];
 }
 
+function isAllowedDomain(input: unknown): input is Domain {
+  return typeof input === "string" && (DOMAINS as readonly string[]).includes(input);
+}
+
 function base64Url(bytes: Uint8Array) {
   const str = btoa(String.fromCharCode(...bytes));
   return str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
@@ -50,9 +54,18 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    let chosenDomain: Domain | null = null;
+    try {
+      const body = await req.json().catch(() => ({}));
+      if (isAllowedDomain(body?.domain)) chosenDomain = body.domain;
+    } catch {
+      // ignore
+    }
+
     // Try a few times to avoid unique collisions.
     for (let i = 0; i < 5; i++) {
-      const address = `${randomLocalPart()}@${randomDomain()}`;
+      const domain = chosenDomain ?? randomDomain();
+      const address = `${randomLocalPart()}@${domain}`;
       const token = randomToken();
       const tokenHash = await sha256Base64Url(token);
 
@@ -63,10 +76,9 @@ Deno.serve(async (req) => {
         .single();
 
       if (!error && data) {
-        return new Response(
-          JSON.stringify({ address: data.email_address, token, expiresAt: data.expires_at }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ address: data.email_address, token, expiresAt: data.expires_at }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       // If collision, retry; otherwise bubble up.
@@ -84,3 +96,4 @@ Deno.serve(async (req) => {
     });
   }
 });
+
