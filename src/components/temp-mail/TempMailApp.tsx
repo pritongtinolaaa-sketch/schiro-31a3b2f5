@@ -5,7 +5,8 @@ import { Copy, Inbox, Mail, RotateCcw, Shield, Sparkles, Trash2 } from "lucide-r
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+
+import InboxCreatorCard, { getTempMailDomains, type Domain } from "@/components/temp-mail/InboxCreatorCard";
 
 import {
   clearInboxRemote,
@@ -20,9 +21,7 @@ import {
   type TempMailMessage,
 } from "./cloudTempMail";
 
-const DOMAINS = ["mailshed.dev", "inboxfwd.net", "tempbox.one"] as const;
-
-type Domain = (typeof DOMAINS)[number];
+const DOMAINS = getTempMailDomains();
 
 function formatTime(ts: number) {
   const d = new Date(ts);
