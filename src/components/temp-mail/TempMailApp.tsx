@@ -173,7 +173,11 @@ export default function TempMailApp() {
 
     setLoadingInbox(true);
     try {
+      // Replace current inbox.
       clearSavedInbox();
+      setEmails([]);
+      setActiveId(null);
+
       const created = await createInbox({ domain: selectedDomain, localPart: chosenLocalPart });
       setAddress(created.address);
       setToken(created.token);
