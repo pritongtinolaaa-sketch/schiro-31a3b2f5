@@ -88,18 +88,14 @@ export default function InboxCreatorCard(props: {
             autoCorrect="off"
             spellCheck={false}
             aria-label="Email name"
-            disabled={loadingInbox || hasInbox}
+            disabled={loadingInbox}
           />
           <div className="text-xs text-muted-foreground">
             Leave blank to randomize. Allowed: letters, numbers, dot, underscore, hyphen.
           </div>
 
           <label className="mt-2 text-xs text-muted-foreground">Choose domain</label>
-          <Select
-            value={selectedDomain ?? undefined}
-            onValueChange={(v) => onSelectedDomainChange(v as Domain)}
-            disabled={loadingInbox || hasInbox}
-          >
+          <Select value={selectedDomain ?? undefined} onValueChange={(v) => onSelectedDomainChange(v as Domain)} disabled={loadingInbox}>
             <SelectTrigger className="text-mono">
               <SelectValue placeholder="Select a domain" />
             </SelectTrigger>
@@ -112,18 +108,16 @@ export default function InboxCreatorCard(props: {
             </SelectContent>
           </Select>
 
-          {!hasInbox ? (
-            <div className="mt-3">
-              <Button
-                variant="hero"
-                className="w-full"
-                onClick={onCreate}
-                disabled={loadingInbox || !selectedDomain}
-              >
-                Create email
-              </Button>
-            </div>
-          ) : null}
+          <div className="mt-3">
+            <Button
+              variant="hero"
+              className="w-full"
+              onClick={onCreate}
+              disabled={loadingInbox || !selectedDomain}
+            >
+              {hasInbox ? "Create new email" : "Create email"}
+            </Button>
+          </div>
 
           <div className="mt-2 flex flex-wrap gap-2">
             <Button variant="glass" className="flex-1" onClick={onCopy} disabled={!hasInbox}>
