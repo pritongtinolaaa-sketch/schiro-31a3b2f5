@@ -982,7 +982,7 @@ export default function TempMailApp() {
                   </div>
 
                   <div className="mt-5 rounded-xl border bg-background p-4 shadow-sm">
-                    <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{active.body}</pre>
+                    <pre className="m-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-foreground">{active.body}</pre>
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
