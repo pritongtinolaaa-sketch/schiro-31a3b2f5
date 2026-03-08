@@ -138,14 +138,18 @@ export default function TempMailApp() {
       return;
     }
 
+    const hasSelected = selectedClaimedAddress
+      ? ownedInboxes.some((inbox) => inbox.address === selectedClaimedAddress)
+      : false;
+
+    if (hasSelected) return;
+
     if (address && ownedInboxes.some((inbox) => inbox.address === address)) {
-      if (selectedClaimedAddress !== address) setSelectedClaimedAddress(address);
+      setSelectedClaimedAddress(address);
       return;
     }
 
-    if (!selectedClaimedAddress || !ownedInboxes.some((inbox) => inbox.address === selectedClaimedAddress)) {
-      setSelectedClaimedAddress(ownedInboxes[0].address);
-    }
+    setSelectedClaimedAddress(ownedInboxes[0].address);
   }, [ownedInboxes, address, selectedClaimedAddress]);
 
   useEffect(() => {
