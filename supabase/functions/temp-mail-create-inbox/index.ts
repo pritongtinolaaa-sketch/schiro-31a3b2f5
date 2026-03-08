@@ -51,8 +51,20 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     const supabase = createClient(supabaseUrl, serviceKey);
+
+    const authHeader = req.headers.get("Authorization");
+    let isAuthenticatedUser = false;
+
+    if (authHeader) {
+      const authClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: authData } = await authClient.auth.getUser();
+      isAuthenticatedUser = Boolean(authData.user);
+    }
 
     let chosenDomain: Domain | null = null;
     let chosenLocalPart: string | null = null;
@@ -97,9 +109,18 @@ Deno.serve(async (req) => {
       const token = randomToken();
       const tokenHash = await sha256Base64Url(token);
 
+      const insertPayload: Record<string, string> = {
+        email_address: address,
+        token_hash: tokenHash,
+      };
+
+      if (isAuthenticatedUser) {
+        insertPayload.expires_at = "9999-12-31T23:59:59Z";
+      }
+
       const { data, error } = await supabase
         .from("temp_mail_inboxes")
-        .insert({ email_address: address, token_hash: tokenHash })
+        .insert(insertPayload)
         .select("email_address, expires_at")
         .single();
 

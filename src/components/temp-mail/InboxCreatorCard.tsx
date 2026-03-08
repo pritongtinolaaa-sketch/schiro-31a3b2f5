@@ -61,7 +61,9 @@ export default function InboxCreatorCard(props: {
               <span className="text-mono break-all">{address ?? (loadingInbox ? "Loading…" : "—")}</span>
             </div>
             {expiresAt ? (
-              <div className="mt-1 text-xs text-muted-foreground">Expires: {new Date(expiresAt).toLocaleString()}</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Expires: {new Date(expiresAt).getFullYear() >= 3000 ? "Never" : new Date(expiresAt).toLocaleString()}
+              </div>
             ) : null}
           </div>
 
