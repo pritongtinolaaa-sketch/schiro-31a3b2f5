@@ -42,6 +42,7 @@ const DEFAULT_DOMAINS: Domain[] = [
   "dollicons.com",
 ];
 const CLAIMED_INBOX_SEEN_KEY = "temp_mail_claimed_seen_v1";
+const AUTO_REFRESH_SECONDS = 15;
 
 type ClaimedSeenMap = Record<string, number>;
 
