@@ -638,6 +638,13 @@ export default function TempMailApp() {
     toast.success("Signed out");
   };
 
+  const scrollToInbox = () => {
+    inboxSectionRef.current?.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  };
+
   const isLoggedIn = Boolean(session);
   const profileLabel =
     profileName ??
