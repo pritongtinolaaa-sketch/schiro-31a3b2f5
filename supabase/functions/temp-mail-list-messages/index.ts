@@ -208,10 +208,28 @@ function extractReadableBody(raw: string) {
   return decodeHtmlEntities(fallback).trim();
 }
 
+function looksLikeBase64Block(input: string) {
+  const compact = input.replace(/\s+/g, "");
+  return compact.length > 80 && /^[A-Za-z0-9+/=]+$/.test(compact);
+}
+
 function normalizeBody(input: unknown) {
   const raw = String(input ?? "").trim();
   if (!raw) return "";
-  return extractReadableBody(raw);
+
+  const extracted = extractReadableBody(raw);
+  if (looksLikeBase64Block(extracted)) {
+    const decoded = decodeBase64(extracted);
+    if (decoded !== extracted) {
+      if (looksLikeHtml(decoded)) {
+        const text = htmlToText(decoded).trim();
+        if (text) return text;
+      }
+      return decodeHtmlEntities(decoded).trim();
+    }
+  }
+
+  return extracted;
 }
 
 function toMessageRow(row: any) {
