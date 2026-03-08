@@ -79,13 +79,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { error: delError } = await supabase
-      .from("temp_mail_messages")
-      .delete()
-      .eq("id", String(messageId))
-      .eq("inbox_id", inbox.id);
+    if (isCatchmailAddress(String(address))) {
+      await deleteCatchmailMessage(String(address), String(messageId));
+    } else {
+      const { error: delError } = await supabase
+        .from("temp_mail_messages")
+        .delete()
+        .eq("id", String(messageId))
+        .eq("inbox_id", inbox.id);
 
-    if (delError) throw delError;
+      if (delError) throw delError;
+    }
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

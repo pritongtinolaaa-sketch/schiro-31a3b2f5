@@ -113,6 +113,13 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (isCatchmailAddress(String(address))) {
+      const messages = await listCatchmailMessages(String(address));
+      return new Response(JSON.stringify({ messages, expiresAt: inbox.expires_at }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: rows, error: msgError } = await supabase
       .from("temp_mail_messages")
       .select("id, from_address, subject, body, received_at")
