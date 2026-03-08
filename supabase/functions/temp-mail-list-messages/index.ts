@@ -45,9 +45,20 @@ function getMailsacHeaders() {
 }
 
 function decodeQuotedPrintable(input: string) {
-  return input
-    .replace(/=\r?\n/g, "")
-    .replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  const normalized = input.replace(/=\r?\n/g, "");
+  const bytes: number[] = [];
+
+  for (let i = 0; i < normalized.length; i += 1) {
+    const ch = normalized[i];
+    if (ch === "=" && /^[A-Fa-f0-9]{2}$/.test(normalized.slice(i + 1, i + 3))) {
+      bytes.push(parseInt(normalized.slice(i + 1, i + 3), 16));
+      i += 2;
+      continue;
+    }
+    bytes.push(ch.charCodeAt(0));
+  }
+
+  return new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(bytes));
 }
 
 function readabilityScore(input: string) {
