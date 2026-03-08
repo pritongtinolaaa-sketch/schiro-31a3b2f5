@@ -325,6 +325,54 @@ export default function TempMailApp() {
     }
   };
 
+  const handleAuthSubmit = async () => {
+    if (!authEmail || !authPassword) {
+      toast.error("Missing credentials", { description: "Please enter email and password." });
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      if (authMode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: authPassword,
+        });
+        if (error) throw error;
+        toast.success("Logged in");
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email: authEmail,
+          password: authPassword,
+          options: {
+            data: {
+              display_name: authDisplayName || undefined,
+            },
+            emailRedirectTo: window.location.origin,
+          },
+        });
+        if (error) throw error;
+        toast.success("Account created", { description: "Check your email to verify your account." });
+      }
+
+      setIsAuthDialogOpen(false);
+      setAuthPassword("");
+    } catch (e: any) {
+      toast.error("Authentication failed", { description: e?.message ?? "Please try again." });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Couldn't sign out", { description: error.message });
+      return;
+    }
+    toast.success("Signed out");
+  };
+
   return (
     <div className="min-h-screen">
       <header ref={heroRef} className="relative overflow-hidden border-b bg-hero">
