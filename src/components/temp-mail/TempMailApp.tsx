@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-import InboxCreatorCard, { getTempMailDomains, type Domain } from "@/components/temp-mail/InboxCreatorCard";
+import InboxCreatorCard, { type Domain } from "@/components/temp-mail/InboxCreatorCard";
 
 import {
   clearInboxRemote,
@@ -22,6 +22,7 @@ import {
   deleteOwnedInbox,
   listMessages,
   listOwnedInboxes,
+  listAvailableDomains,
   loadSavedInbox,
   saveInbox,
   getKnownInboxToken,
@@ -31,7 +32,15 @@ import {
   type TempMailMessage,
 } from "./cloudTempMail";
 
-const DOMAINS = getTempMailDomains();
+const DEFAULT_DOMAINS: Domain[] = [
+  "tinola.eu.cc",
+  "schiro.qzz.io",
+  "schiro.dpdns.org",
+  "schiro.indevs.in",
+  "mailshed.dev",
+  "inboxfwd.net",
+  "tempbox.one",
+];
 const CLAIMED_INBOX_SEEN_KEY = "temp_mail_claimed_seen_v1";
 
 type ClaimedSeenMap = Record<string, number>;
@@ -76,17 +85,18 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-function domainFromAddress(address: string): Domain | null {
+function domainFromAddress(address: string, domains: readonly string[]): Domain | null {
   const at = address.lastIndexOf("@");
   if (at === -1) return null;
   const d = address.slice(at + 1);
-  return (DOMAINS as readonly string[]).includes(d) ? (d as Domain) : null;
+  return domains.includes(d) ? d : null;
 }
 
 export default function TempMailApp() {
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
+  const [availableDomains, setAvailableDomains] = useState<Domain[]>(DEFAULT_DOMAINS);
+  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(DEFAULT_DOMAINS[0] ?? null);
   const [localPart, setLocalPart] = useState("");
 
   const [address, setAddress] = useState<string | null>(null);
@@ -169,6 +179,17 @@ export default function TempMailApp() {
     el.addEventListener("pointermove", onMove);
     return () => el.removeEventListener("pointermove", onMove);
   }, [prefersReducedMotion]);
+
+  const loadAvailableDomains = useCallback(async () => {
+    try {
+      const domains = await listAvailableDomains();
+      if (domains.length > 0) {
+        setAvailableDomains(domains);
+      }
+    } catch {
+      // fallback domains stay in place
+    }
+  }, []);
 
   const loadProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle();
@@ -260,7 +281,7 @@ export default function TempMailApp() {
 
   const openClaimedInbox = async (claimedInbox: OwnedInbox) => {
     const [claimedLocalPart, claimedDomain] = claimedInbox.address.split("@");
-    if (!claimedLocalPart || !claimedDomain || !(DOMAINS as readonly string[]).includes(claimedDomain)) {
+    if (!claimedLocalPart || !claimedDomain || !availableDomains.includes(claimedDomain)) {
       toast.error("Invalid claimed address", { description: "That address can't be opened." });
       return;
     }
@@ -348,7 +369,7 @@ export default function TempMailApp() {
         setAddress(saved.address);
         setToken(saved.token);
         setExpiresAt(saved.expiresAt);
-        const d = domainFromAddress(saved.address);
+        const d = domainFromAddress(saved.address, availableDomains);
         if (d) setSelectedDomain(d);
       }
     } finally {
@@ -359,8 +380,9 @@ export default function TempMailApp() {
   useEffect(() => {
     if (!authReady || loadingInbox || user || address || creatingGuestInboxRef.current) return;
 
-    const domain = selectedDomain ?? DOMAINS[0];
-    if (!selectedDomain) setSelectedDomain(domain);
+    const domain = selectedDomain ?? availableDomains[0];
+    if (!domain) return;
+    if (!selectedDomain && domain) setSelectedDomain(domain);
 
     creatingGuestInboxRef.current = true;
     setLoadingInbox(true);
@@ -379,7 +401,7 @@ export default function TempMailApp() {
         creatingGuestInboxRef.current = false;
         setLoadingInbox(false);
       });
-  }, [authReady, loadingInbox, user, address, selectedDomain]);
+  }, [authReady, loadingInbox, user, address, selectedDomain, availableDomains]);
 
   useEffect(() => {
     if (!authReady) return;
@@ -389,6 +411,15 @@ export default function TempMailApp() {
     }
     void refreshOwnedInboxes();
   }, [authReady, user, refreshOwnedInboxes]);
+
+  useEffect(() => {
+    void loadAvailableDomains();
+  }, [loadAvailableDomains]);
+
+  useEffect(() => {
+    if (selectedDomain && availableDomains.includes(selectedDomain)) return;
+    setSelectedDomain(availableDomains[0] ?? null);
+  }, [availableDomains, selectedDomain]);
 
   useEffect(() => {
     void ensureInbox();
@@ -512,7 +543,7 @@ export default function TempMailApp() {
   };
 
   const clearInbox = async () => {
-    const targetDomain = selectedDomain ?? (address ? domainFromAddress(address) : null);
+    const targetDomain = selectedDomain ?? (address ? domainFromAddress(address, availableDomains) : null);
     if (!targetDomain) {
       toast.error("Select a domain first", { description: "Pick a domain, then clear to generate a random email." });
       return;
@@ -682,6 +713,7 @@ export default function TempMailApp() {
                 loadingInbox={loadingInbox}
                 address={address}
                 expiresAt={expiresAt}
+                domains={availableDomains}
                 selectedDomain={selectedDomain}
                 onSelectedDomainChange={setSelectedDomain}
                 localPart={localPart}
