@@ -42,6 +42,7 @@ const DEFAULT_DOMAINS: Domain[] = [
   "dollicons.com",
 ];
 const CLAIMED_INBOX_SEEN_KEY = "temp_mail_claimed_seen_v1";
+const AUTO_REFRESH_SECONDS = 15;
 
 type ClaimedSeenMap = Record<string, number>;
 
@@ -105,6 +106,7 @@ export default function TempMailApp() {
 
   const [loadingInbox, setLoadingInbox] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [refreshCountdown, setRefreshCountdown] = useState(AUTO_REFRESH_SECONDS);
 
   const [emails, setEmails] = useState<TempMailMessage[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -440,14 +442,32 @@ export default function TempMailApp() {
   }, [address, token, refreshMessages]);
 
   useEffect(() => {
-    if (!address || !token) return;
+    if (!address || !token) {
+      setRefreshCountdown(AUTO_REFRESH_SECONDS);
+      return;
+    }
+
+    setRefreshCountdown(AUTO_REFRESH_SECONDS);
+
+    const countdownId = window.setInterval(() => {
+      setRefreshCountdown((prev) => (prev <= 1 ? AUTO_REFRESH_SECONDS : prev - 1));
+    }, 1000);
 
     const intervalId = window.setInterval(() => {
       void refreshMessages({ silent: true });
-    }, 15000);
+      setRefreshCountdown(AUTO_REFRESH_SECONDS);
+    }, AUTO_REFRESH_SECONDS * 1000);
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearInterval(countdownId);
+      window.clearInterval(intervalId);
+    };
   }, [address, token, refreshMessages]);
+
+  const handleManualRefresh = useCallback(() => {
+    setRefreshCountdown(AUTO_REFRESH_SECONDS);
+    void refreshMessages();
+  }, [refreshMessages]);
 
   const copyAddress = async () => {
     if (!address) return;
@@ -701,9 +721,10 @@ export default function TempMailApp() {
                 <Button variant="glass" onClick={copyAddress} disabled={!address}>
                   <Copy /> Copy address
                 </Button>
-                <Button variant="secondary" onClick={() => void refreshMessages()} disabled={loadingMessages || !address}>
+                <Button variant="secondary" onClick={handleManualRefresh} disabled={loadingMessages || !address}>
                   Refresh
                 </Button>
+                <span className="text-xs text-muted-foreground">Auto-refresh: {address && token ? `${refreshCountdown}s` : "—"}</span>
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3 text-sm text-muted-foreground">
@@ -867,11 +888,12 @@ export default function TempMailApp() {
                   variant="outline"
                   size="sm"
                   className="flex-1 sm:flex-none"
-                  onClick={() => void refreshMessages()}
+                  onClick={handleManualRefresh}
                   disabled={loadingMessages || !address}
                 >
                   Refresh
                 </Button>
+                <span className="w-full text-xs text-muted-foreground sm:w-auto">Auto-refresh: {address && token ? `${refreshCountdown}s` : "—"}</span>
               </div>
             </div>
 
