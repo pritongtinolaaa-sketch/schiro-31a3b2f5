@@ -61,47 +61,68 @@ function decodeQuotedPrintable(input: string) {
   return new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(bytes));
 }
 
+function repairMojibakeUtf8(input: string) {
+  if (!input) return "";
+  const bytes = Uint8Array.from(input, (ch) => ch.charCodeAt(0) & 0xff);
+  return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+}
+
 function readabilityScore(input: string) {
   if (!input) return 0;
   let readable = 0;
+  let unreadable = 0;
 
   for (const ch of input) {
     const code = ch.charCodeAt(0);
     const isPrintableAscii = code >= 32 && code <= 126;
     const isWhitespace = ch === "\n" || ch === "\r" || ch === "\t";
-    const isCommonUnicode = code >= 0xa0;
-    if (isPrintableAscii || isWhitespace || isCommonUnicode) readable += 1;
+    const isCommonUnicode = code >= 0xa0 && ch !== "�";
+    const isControl = code < 32 && !isWhitespace;
+
+    if (isControl || code === 127 || ch === "�") {
+      unreadable += 1;
+      continue;
+    }
+
+    if (isPrintableAscii || isWhitespace || isCommonUnicode) {
+      readable += 1;
+    } else {
+      unreadable += 1;
+    }
   }
 
-  return readable / input.length;
+  const total = readable + unreadable;
+  return total > 0 ? readable / total : 0;
 }
 
-function decodeBase64(input: string) {
+function pickBestReadable(candidates: string[], minScore = 0.6) {
+  const ranked = Array.from(
+    new Set(candidates.map((value) => String(value ?? "").trim()).filter(Boolean)),
+  )
+    .map((value) => ({ value, score: readabilityScore(value) }))
+    .sort((a, b) => (b.score === a.score ? b.value.length - a.value.length : b.score - a.score));
+
+  const best = ranked[0];
+  if (!best || best.score < minScore) return null;
+  return best.value;
+}
+
+function decodeBase64(input: string): string | null {
   try {
     const compact = input.replace(/[^A-Za-z0-9+/=_-]/g, "").replace(/-/g, "+").replace(/_/g, "/");
-    if (!compact) return input;
+    if (!compact || compact.length < 16) return null;
 
     const padded = compact.padEnd(Math.ceil(compact.length / 4) * 4, "=");
     const binary = atob(padded);
     const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
 
-    const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
-    const latin1 = binary;
-    const repairedFromLatin1 = new TextDecoder("utf-8", { fatal: false }).decode(
-      Uint8Array.from(latin1, (ch) => ch.charCodeAt(0)),
-    );
+    const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(bytes).trim();
+    const latin1 = binary.trim();
+    const repaired = repairMojibakeUtf8(latin1).trim();
 
-    const utf8HasCjk = /[\u3040-\u30ff\u3400-\u9fff]/.test(utf8);
-    const repairedHasCjk = /[\u3040-\u30ff\u3400-\u9fff]/.test(repairedFromLatin1);
-    const latin1LooksMojibake = /(Ã.|ã.|Â.|Ð.|Ñ.|å.|æ.|ç.)/.test(latin1);
-
-    if (latin1LooksMojibake && repairedHasCjk) return repairedFromLatin1;
-    if (utf8HasCjk && latin1LooksMojibake) return utf8;
-
-    const best = [utf8, repairedFromLatin1, latin1].sort((a, b) => readabilityScore(b) - readabilityScore(a))[0];
-    return best;
+    return pickBestReadable([utf8, repaired, latin1], 0.45);
   } catch {
-    return input;
+    return null;
   }
 }
 
