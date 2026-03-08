@@ -20,6 +20,12 @@ type ListMessagesResponse = {
   expiresAt: string;
 };
 
+export type OwnedInbox = {
+  address: string;
+  createdAt: string;
+  expiresAt: string;
+};
+
 const STORAGE_KEY = "temp_mail_inbox_v1";
 const HISTORY_KEY = "temp_mail_inbox_history_v1";
 
@@ -107,6 +113,12 @@ export async function deleteMessage(input: { address: string; token: string; mes
 export async function clearInboxRemote(input: { address: string; token: string }) {
   const { error } = await supabase.functions.invoke("temp-mail-clear-inbox", { body: input });
   if (error) throw error;
+}
+
+export async function listOwnedInboxes(): Promise<OwnedInbox[]> {
+  const { data, error } = await supabase.functions.invoke<{ inboxes: OwnedInbox[] }>("temp-mail-list-owned-inboxes");
+  if (error) throw error;
+  return data?.inboxes ?? [];
 }
 
 export function subscribeToInbox(address: string, onNewMail: () => void) {

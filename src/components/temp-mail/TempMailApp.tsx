@@ -19,11 +19,13 @@ import {
   createInbox,
   deleteMessage,
   listMessages,
+  listOwnedInboxes,
   loadSavedInbox,
   saveInbox,
   getKnownInboxToken,
   sendTestEmail,
   subscribeToInbox,
+  type OwnedInbox,
   type TempMailMessage,
 } from "./cloudTempMail";
 
@@ -87,6 +89,8 @@ export default function TempMailApp() {
   const [authPassword, setAuthPassword] = useState("");
   const [authDisplayName, setAuthDisplayName] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [ownedInboxes, setOwnedInboxes] = useState<OwnedInbox[]>([]);
+  const [loadingOwnedInboxes, setLoadingOwnedInboxes] = useState(false);
 
   useEffect(() => {
     if (!activeId && emails[0]?.id) setActiveId(emails[0].id);
@@ -167,6 +171,23 @@ export default function TempMailApp() {
     }
   }, [address, token]);
 
+  const refreshOwnedInboxes = useCallback(async () => {
+    if (!user) {
+      setOwnedInboxes([]);
+      return;
+    }
+
+    setLoadingOwnedInboxes(true);
+    try {
+      const inboxes = await listOwnedInboxes();
+      setOwnedInboxes(inboxes);
+    } catch (e: any) {
+      toast.error("Couldn't load claimed emails", { description: e?.message ?? "Please try again." });
+    } finally {
+      setLoadingOwnedInboxes(false);
+    }
+  }, [user]);
+
   const ensureInbox = async () => {
     setLoadingInbox(true);
     try {
@@ -207,6 +228,15 @@ export default function TempMailApp() {
         setLoadingInbox(false);
       });
   }, [authReady, loadingInbox, user, address, selectedDomain]);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (!user) {
+      setOwnedInboxes([]);
+      return;
+    }
+    void refreshOwnedInboxes();
+  }, [authReady, user, refreshOwnedInboxes]);
 
   useEffect(() => {
     void ensureInbox();
@@ -275,6 +305,7 @@ export default function TempMailApp() {
       saveInbox(created);
       setLocalPart("");
       toast.success("Email created", { description: created.address });
+      if (user) await refreshOwnedInboxes();
     } catch (e: any) {
       toast.error("Couldn't create email", { description: e?.message ?? "Please try again." });
     } finally {
@@ -295,6 +326,7 @@ export default function TempMailApp() {
       setEmails([]);
       setActiveId(null);
       toast("New inbox generated", { description: "Your previous inbox was cleared." });
+      if (user) await refreshOwnedInboxes();
     } catch (e: any) {
       toast.error("Couldn't generate inbox", { description: e?.message ?? "Please try again." });
     } finally {
@@ -352,6 +384,7 @@ export default function TempMailApp() {
       setLocalPart("");
 
       toast.success("Random email generated", { description: created.address });
+      if (user) await refreshOwnedInboxes();
     } catch (e: any) {
       toast.error("Couldn't regenerate email", { description: e?.message ?? "Please try again." });
     } finally {
@@ -512,6 +545,30 @@ export default function TempMailApp() {
       </header>
 
       <main className="container py-8 md:py-10">
+        {isLoggedIn ? (
+          <Card className="mb-4">
+            <div className="border-b p-4">
+              <div className="text-sm font-medium">Claimed email addresses</div>
+              <div className="text-xs text-muted-foreground">Addresses tied to your account</div>
+            </div>
+            <div className="max-h-56 overflow-auto p-4">
+              {loadingOwnedInboxes ? (
+                <div className="text-sm text-muted-foreground">Loading claimed addresses...</div>
+              ) : ownedInboxes.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No claimed addresses yet.</div>
+              ) : (
+                <ul className="space-y-2">
+                  {ownedInboxes.map((inbox) => (
+                    <li key={inbox.address} className="rounded-lg border bg-surface-2 px-3 py-2">
+                      <div className="text-sm text-mono">{inbox.address}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </Card>
+        ) : null}
+
         <section className="grid gap-4 md:grid-cols-12">
           <Card className="md:col-span-5">
             <div className="flex items-center justify-between gap-4 border-b p-4">
