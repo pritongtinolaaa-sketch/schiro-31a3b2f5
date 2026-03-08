@@ -888,11 +888,12 @@ export default function TempMailApp() {
                   variant="outline"
                   size="sm"
                   className="flex-1 sm:flex-none"
-                  onClick={() => void refreshMessages()}
+                  onClick={handleManualRefresh}
                   disabled={loadingMessages || !address}
                 >
                   Refresh
                 </Button>
+                <span className="w-full text-xs text-muted-foreground sm:w-auto">Auto-refresh: {address && token ? `${refreshCountdown}s` : "—"}</span>
               </div>
             </div>
 
