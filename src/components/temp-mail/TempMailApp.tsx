@@ -722,7 +722,7 @@ export default function TempMailApp() {
                 </div>
                 <Button asChild variant="outline" className="mt-2 w-full">
                   <a href="https://schiro.eu.cc" target="_blank" rel="noopener noreferrer">
-                    Check my other Netflix Cookie Checker site
+                    Check out my other Netflix Cookie Checker site
                   </a>
                 </Button>
               </div>
