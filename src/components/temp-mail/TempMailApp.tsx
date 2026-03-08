@@ -46,6 +46,14 @@ const CLAIMED_INBOX_SEEN_KEY = "temp_mail_claimed_seen_v1";
 const AUTO_REFRESH_SECONDS = 15;
 const OWNER_USER_ID = "fD11RMWDuvYFY2I0yBSTKXUj4d23";
 
+const DOMAIN_NOTES: Record<string, string> = {
+  "inboxkitten.com": "Public inbox, auto-deletes quickly (best for testing only).",
+  "mailsac.com": "Public/testing inbox with limited retention depending on provider policy.",
+  "catchmail.io": "Public/testing inbox with limited retention depending on provider policy.",
+  "mailistry.com": "Public/testing inbox with limited retention depending on provider policy.",
+  "zeppost.com": "Public/testing inbox with limited retention depending on provider policy.",
+};
+
 type ClaimedSeenMap = Record<string, number>;
 
 function readClaimedSeenMap(): ClaimedSeenMap {

@@ -30,6 +30,7 @@ export default function InboxCreatorCard(props: {
   onCopy: () => void;
   onClear: () => void;
   onGoToInbox: () => void;
+  getDomainNote?: (domain: Domain | null) => string | null;
 }) {
   const {
     loadingInbox,

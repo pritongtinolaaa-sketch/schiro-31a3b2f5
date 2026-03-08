@@ -9,6 +9,7 @@ const corsHeaders = {
 
 const CATCHMAIL_DOMAINS = new Set(["catchmail.io", "mailistry.com", "zeppost.com"]);
 const MAILSAC_DOMAINS = new Set(["mailsac.com"]);
+const INBOXKITTEN_DOMAINS = new Set(["inboxkitten.com"]);
 
 function base64Url(bytes: Uint8Array) {
   const str = btoa(String.fromCharCode(...bytes));
