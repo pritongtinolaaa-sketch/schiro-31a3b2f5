@@ -97,7 +97,7 @@ export default function TempMailApp() {
     return () => el.removeEventListener("pointermove", onMove);
   }, [prefersReducedMotion]);
 
-  const refreshMessages = async (opts?: { silent?: boolean }) => {
+  const refreshMessages = useCallback(async (opts?: { silent?: boolean }) => {
     if (!address || !token) return;
     if (!opts?.silent) setLoadingMessages(true);
 
@@ -110,7 +110,7 @@ export default function TempMailApp() {
     } finally {
       setLoadingMessages(false);
     }
-  };
+  }, [address, token]);
 
   const ensureInbox = async () => {
     setLoadingInbox(true);
