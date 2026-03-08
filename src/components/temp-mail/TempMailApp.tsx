@@ -901,10 +901,7 @@ export default function TempMailApp() {
         </section>
 
         <footer className="mt-10 border-t pt-6 text-xs text-muted-foreground">
-          <p>
-            Backend is enabled via Lovable Cloud. Next: connect an inbound email provider to the webhook so real external
-            emails are ingested automatically.
-          </p>
+          <p>(c) Schiro 2026</p>
         </footer>
       </main>
 
