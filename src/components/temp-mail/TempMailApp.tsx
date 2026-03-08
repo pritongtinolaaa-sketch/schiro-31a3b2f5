@@ -655,19 +655,39 @@ export default function TempMailApp() {
                 <ul className="space-y-2">
                   {ownedInboxes.map((inbox) => {
                     const selected = address === inbox.address;
+                    const latestReceivedAtTs = inbox.latestReceivedAt ? Date.parse(inbox.latestReceivedAt) : 0;
+                    const seenTs = claimedSeenMap[inbox.address] ?? 0;
+                    const hasUnread = latestReceivedAtTs > seenTs;
+
                     return (
-                      <li key={inbox.address}>
+                      <li key={inbox.address} className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => void openClaimedInbox(inbox.address)}
-                          disabled={loadingInbox}
+                          onClick={() => void openClaimedInbox(inbox)}
+                          disabled={loadingInbox || deletingOwnedAddress === inbox.address}
                           className={cn(
-                            "w-full rounded-lg border px-3 py-2 text-left transition-colors",
+                            "flex-1 rounded-lg border px-3 py-2 text-left transition-colors",
                             selected ? "bg-accent/10" : "bg-surface-2 hover:bg-muted/50",
                           )}
                         >
-                          <div className="text-sm text-mono">{inbox.address}</div>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-sm text-mono">{inbox.address}</div>
+                            {hasUnread ? (
+                              <span className="inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium">Unread</span>
+                            ) : null}
+                          </div>
                         </button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          disabled={deletingOwnedAddress === inbox.address}
+                          onClick={() => void handleDeleteOwnedInbox(inbox.address)}
+                          aria-label={`Delete ${inbox.address}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </li>
                     );
                   })}
