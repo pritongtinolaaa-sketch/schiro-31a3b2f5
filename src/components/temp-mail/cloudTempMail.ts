@@ -24,6 +24,7 @@ export type OwnedInbox = {
   address: string;
   createdAt: string;
   expiresAt: string;
+  latestReceivedAt: string | null;
 };
 
 const STORAGE_KEY = "temp_mail_inbox_v1";
