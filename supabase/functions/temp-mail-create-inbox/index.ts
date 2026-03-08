@@ -9,14 +9,19 @@ const corsHeaders = {
 
 const LOCAL_DOMAINS = [
   "dollicons.com",
-  "mailshed.dev",
-  "inboxfwd.net",
-  "tempbox.one",
   "tinola.eu.cc",
   "schiro.qzz.io",
   "schiro.dpdns.org",
   "schiro.indevs.in",
 ] as const;
+
+const BLOCKED_DOMAINS = new Set<string>([
+  "mailshed.dev",
+  "inboxfwd.net",
+  "tempbox.one",
+  "schhiro.store",
+  "schiro.store",
+]);
 
 async function fetchMailTmDomains(): Promise<string[]> {
   try {
@@ -26,8 +31,8 @@ async function fetchMailTmDomains(): Promise<string[]> {
     const members = Array.isArray(payload?.["hydra:member"]) ? payload["hydra:member"] : [];
     return members
       .filter((item: any) => item?.isActive !== false && item?.isPrivate !== true)
-      .map((item: any) => String(item?.domain ?? "").trim())
-      .filter((value: string) => value.length > 0);
+      .map((item: any) => String(item?.domain ?? "").trim().toLowerCase())
+      .filter((value: string) => value.length > 0 && !BLOCKED_DOMAINS.has(value));
   } catch {
     return [];
   }
@@ -62,6 +67,7 @@ async function isAllowedDomain(input: unknown, supabase: any, requesterUserId: s
   if (typeof input !== "string") return false;
   const domain = input.trim().toLowerCase();
   if (!domain) return false;
+  if (BLOCKED_DOMAINS.has(domain)) return false;
 
   if ((LOCAL_DOMAINS as readonly string[]).includes(domain)) return true;
 
@@ -70,7 +76,7 @@ async function isAllowedDomain(input: unknown, supabase: any, requesterUserId: s
     isOwnedDomain(supabase, requesterUserId, domain),
   ]);
 
-  if (owned) return true;
+  if (owned) return !BLOCKED_DOMAINS.has(domain);
   return mailTmDomains.includes(domain);
 }
 

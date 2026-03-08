@@ -9,14 +9,19 @@ const corsHeaders = {
 
 const LOCAL_DOMAINS = [
   "dollicons.com",
-  "mailshed.dev",
-  "inboxfwd.net",
-  "tempbox.one",
   "tinola.eu.cc",
   "schiro.qzz.io",
   "schiro.dpdns.org",
   "schiro.indevs.in",
 ] as const;
+
+const BLOCKED_DOMAINS = new Set<string>([
+  "mailshed.dev",
+  "inboxfwd.net",
+  "tempbox.one",
+  "schhiro.store",
+  "schiro.store",
+]);
 
 type MailTmDomain = {
   domain?: string;
@@ -33,7 +38,7 @@ async function fetchMailTmDomains(): Promise<string[]> {
     return members
       .filter((item) => item?.isActive !== false && item?.isPrivate !== true)
       .map((item) => String(item.domain ?? "").trim().toLowerCase())
-      .filter((value) => value.length > 0);
+      .filter((value) => value.length > 0 && !BLOCKED_DOMAINS.has(value));
   } catch {
     return [];
   }
@@ -63,7 +68,7 @@ async function fetchOwnedDomains(supabase: any, requesterUserId: string | null):
 
   for (const row of data) {
     const domain = extractDomain(String(row?.email_address ?? ""));
-    if (!domain || seen.has(domain)) continue;
+    if (!domain || BLOCKED_DOMAINS.has(domain) || seen.has(domain)) continue;
     seen.add(domain);
     ownedDomains.push(domain);
   }
@@ -103,7 +108,7 @@ Deno.serve(async (req) => {
     const localOnly = LOCAL_DOMAINS.filter((d) => !ownedSet.has(d.toLowerCase()));
 
     const externalOnly = Array.from(new Set(external))
-      .filter((domain) => !localSet.has(domain) && !ownedSet.has(domain))
+      .filter((domain) => !localSet.has(domain) && !ownedSet.has(domain) && !BLOCKED_DOMAINS.has(domain))
       .sort((a, b) => a.localeCompare(b));
 
     const domains = [...ownedDomains, ...localOnly, ...externalOnly];
