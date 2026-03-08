@@ -692,7 +692,7 @@ export default function TempMailApp() {
               <span className="max-w-[120px] truncate text-sm text-muted-foreground sm:max-w-[180px]">{profileLabel}</span>
               {isOwner ? (
                 <Badge
-                  className="relative overflow-hidden border-primary/80 bg-primary/25 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.85),0_0_14px_hsl(var(--primary)/0.85),0_0_28px_hsl(var(--primary)/0.65)] before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(120deg,transparent_0%,hsl(var(--primary-foreground)/0.28)_38%,transparent_60%),radial-gradient(circle_at_20%_30%,hsl(var(--primary-foreground)/0.5),transparent_35%),radial-gradient(circle_at_80%_70%,hsl(var(--accent-foreground)/0.4),transparent_32%)] before:opacity-85 before:mix-blend-screen motion-safe:animate-pulse"
+                  className="relative overflow-hidden border-primary bg-primary/30 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.95),0_0_18px_hsl(var(--primary)/0.95),0_0_38px_hsl(var(--primary)/0.9),0_0_64px_hsl(var(--primary)/0.7)] before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(120deg,transparent_0%,hsl(var(--primary-foreground)/0.35)_38%,transparent_62%),radial-gradient(circle_at_20%_30%,hsl(var(--primary-foreground)/0.58),transparent_35%),radial-gradient(circle_at_80%_70%,hsl(var(--accent-foreground)/0.48),transparent_32%)] before:opacity-95 before:mix-blend-screen motion-safe:animate-pulse"
                   variant="outline"
                 >
                   OWNER
