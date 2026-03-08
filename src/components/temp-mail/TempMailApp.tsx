@@ -732,6 +732,17 @@ export default function TempMailApp() {
                       size="icon"
                       className="shrink-0"
                       disabled={deletingOwnedAddress === selectedClaimedInbox.address}
+                      onClick={() => void copyClaimedAddress(selectedClaimedInbox.address)}
+                      aria-label={`Copy ${selectedClaimedInbox.address}`}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      disabled={deletingOwnedAddress === selectedClaimedInbox.address}
                       onClick={() => void handleDeleteOwnedInbox(selectedClaimedInbox.address)}
                       aria-label={`Delete ${selectedClaimedInbox.address}`}
                     >
