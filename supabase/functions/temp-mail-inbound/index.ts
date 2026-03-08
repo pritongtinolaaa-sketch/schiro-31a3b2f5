@@ -28,35 +28,133 @@ function decodeQuotedPrintable(input: string) {
     .replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 }
 
-function extractReadableBody(raw: string) {
-  const normalized = String(raw ?? "").replace(/\r\n/g, "\n");
+function decodeBase64(input: string) {
+  try {
+    const compact = input.replace(/\s+/g, "");
+    return atob(compact);
+  } catch {
+    return input;
+  }
+}
 
-  const boundaryMatch = normalized.match(/boundary="?([^"\n;]+)"?/i);
-  if (boundaryMatch) {
-    const boundary = `--${boundaryMatch[1]}`;
-    const parts = normalized.split(boundary);
+function decodeHtmlEntities(input: string) {
+  return input
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)))
+    .replace(/&#x([A-Fa-f0-9]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function htmlToText(input: string) {
+  return decodeHtmlEntities(
+    input
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<br\s*\/?\s*>/gi, "\n")
+      .replace(/<\/p\s*>/gi, "\n\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim(),
+  );
+}
+
+function splitHeadersAndBody(part: string) {
+  const normalized = part.replace(/\r\n/g, "\n");
+  const idx = normalized.indexOf("\n\n");
+  if (idx === -1) return { headersRaw: "", bodyRaw: normalized };
+  return {
+    headersRaw: normalized.slice(0, idx),
+    bodyRaw: normalized.slice(idx + 2),
+  };
+}
+
+function parseHeaders(headersRaw: string) {
+  const result: Record<string, string> = {};
+  let currentKey = "";
+
+  for (const line of headersRaw.split("\n")) {
+    if (/^[ \t]/.test(line) && currentKey) {
+      result[currentKey] += ` ${line.trim()}`;
+      continue;
+    }
+
+    const idx = line.indexOf(":");
+    if (idx === -1) continue;
+    currentKey = line.slice(0, idx).trim().toLowerCase();
+    result[currentKey] = line.slice(idx + 1).trim();
+  }
+
+  return result;
+}
+
+function getBoundary(contentType: string) {
+  const m = contentType.match(/boundary=(?:"([^"]+)"|([^;\s]+))/i);
+  return (m?.[1] ?? m?.[2] ?? "").trim();
+}
+
+function decodeTransferEncoding(body: string, encoding: string) {
+  const normalized = encoding.toLowerCase();
+  if (normalized.includes("quoted-printable")) return decodeQuotedPrintable(body);
+  if (normalized.includes("base64")) return decodeBase64(body);
+  return body;
+}
+
+function collectReadableBodies(rawPart: string, plain: string[], html: string[], depth = 0) {
+  if (depth > 8) return;
+
+  const { headersRaw, bodyRaw } = splitHeadersAndBody(rawPart);
+  const headers = parseHeaders(headersRaw);
+  const contentType = (headers["content-type"] ?? "text/plain").toLowerCase();
+  const transferEncoding = headers["content-transfer-encoding"] ?? "";
+
+  if (contentType.includes("multipart/")) {
+    const boundary = getBoundary(contentType);
+    if (!boundary) return;
+
+    const token = `--${boundary}`;
+    const parts = bodyRaw.split(token);
 
     for (const part of parts) {
-      if (!/content-type:\s*text\/plain/i.test(part)) continue;
-
-      const plain = part
-        .replace(/^[\s\S]*?\n\n/, "")
-        .replace(/\n--\s*$/, "")
-        .trim();
-
-      if (!plain) continue;
-      return decodeQuotedPrintable(plain).trim();
+      const trimmed = part.trim();
+      if (!trimmed || trimmed === "--") continue;
+      if (trimmed.startsWith("--")) continue;
+      collectReadableBodies(trimmed, plain, html, depth + 1);
     }
+    return;
   }
 
-  // Fallback for full RFC822 payloads: remove transport headers and keep content.
-  const sections = normalized.split(/\n\n/);
-  if (sections.length > 1) {
-    const maybeContent = sections.slice(1).join("\n\n").trim();
-    if (maybeContent) return maybeContent;
+  const decoded = decodeTransferEncoding(bodyRaw, transferEncoding).trim();
+  if (!decoded) return;
+
+  if (contentType.includes("text/plain")) {
+    plain.push(decoded);
+    return;
   }
 
-  return normalized.trim();
+  if (contentType.includes("text/html")) {
+    const text = htmlToText(decoded);
+    if (text) html.push(text);
+  }
+}
+
+function extractReadableBody(raw: string) {
+  const normalized = String(raw ?? "").replace(/\r\n/g, "\n");
+  const plain: string[] = [];
+  const html: string[] = [];
+
+  collectReadableBodies(normalized, plain, html);
+
+  if (plain.length > 0) return plain.join("\n\n").trim();
+  if (html.length > 0) return html.join("\n\n").trim();
+
+  const { bodyRaw } = splitHeadersAndBody(normalized);
+  const fallback = decodeQuotedPrintable(bodyRaw).trim();
+  return fallback || normalized.trim();
 }
 
 Deno.serve(async (req) => {
