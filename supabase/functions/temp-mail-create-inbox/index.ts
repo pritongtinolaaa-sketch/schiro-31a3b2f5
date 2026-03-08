@@ -31,8 +31,8 @@ async function fetchMailTmDomains(): Promise<string[]> {
     const members = Array.isArray(payload?.["hydra:member"]) ? payload["hydra:member"] : [];
     return members
       .filter((item: any) => item?.isActive !== false && item?.isPrivate !== true)
-      .map((item: any) => String(item?.domain ?? "").trim())
-      .filter((value: string) => value.length > 0);
+      .map((item: any) => String(item?.domain ?? "").trim().toLowerCase())
+      .filter((value: string) => value.length > 0 && !BLOCKED_DOMAINS.has(value));
   } catch {
     return [];
   }
