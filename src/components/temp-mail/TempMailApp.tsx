@@ -464,6 +464,11 @@ export default function TempMailApp() {
     };
   }, [address, token, refreshMessages]);
 
+  const handleManualRefresh = useCallback(() => {
+    setRefreshCountdown(AUTO_REFRESH_SECONDS);
+    void refreshMessages();
+  }, [refreshMessages]);
+
   const copyAddress = async () => {
     if (!address) return;
     try {
