@@ -715,7 +715,7 @@ export default function TempMailApp() {
                 </div>
               </div>
 
-              <div className="mt-6">
+              <div className="mt-6 flex justify-center">
                 <Button variant="outline" onClick={scrollToInbox}>
                   Go to inbox ↓
                 </Button>
