@@ -41,7 +41,7 @@ function randomLocalPart() {
   return `${a}.${n}${num}`;
 }
 
-async function isAllowedDomain(input: unknown): Promise<input is string> {
+async function isAllowedDomain(input: unknown): Promise<boolean> {
   if (typeof input !== "string") return false;
   if ((LOCAL_DOMAINS as readonly string[]).includes(input)) return true;
   const mailTmDomains = await fetchMailTmDomains();
