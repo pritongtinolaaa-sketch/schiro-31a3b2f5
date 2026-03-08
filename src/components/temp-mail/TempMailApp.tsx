@@ -716,8 +716,15 @@ export default function TempMailApp() {
                 </div>
               </div>
 
-              <div className="mt-10 rounded-lg border bg-background/60 p-3 text-xs text-muted-foreground md:absolute md:bottom-0 md:left-0 md:w-[30rem] md:max-w-[92%] md:mt-0">
-                Tip: Create an email first, then press “Receive” to deliver a real test message.
+              <div className="mt-10 md:absolute md:bottom-4 md:left-0 md:mt-0 md:w-[30rem] md:max-w-[92%]">
+                <div className="rounded-lg border bg-background/60 p-3 text-xs text-muted-foreground">
+                  Tip: Create an email first, then press “Receive” to deliver a real test message.
+                </div>
+                <Button asChild variant="outline" className="mt-2 w-full">
+                  <a href="https://schiro.eu.cc" target="_blank" rel="noopener noreferrer">
+                    Check my other Netflix Cookie Checker site
+                  </a>
+                </Button>
               </div>
             </div>
 
