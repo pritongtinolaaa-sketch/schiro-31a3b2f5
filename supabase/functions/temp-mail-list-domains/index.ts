@@ -12,6 +12,7 @@ const LOCAL_DOMAINS = [
   "schiro.qzz.io",
   "schiro.dpdns.org",
   "schiro.indevs.in",
+  "schiromail.indevs.in",
   "dollicons.com",
 ] as const;
 
