@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const DOMAINS = ["tinola.eu.cc", "schiro.qzz.io", "schiro.dpdns.org", "mailshed.dev", "inboxfwd.net", "tempbox.one"] as const;
+const DOMAINS = ["tinola.eu.cc", "schiro.qzz.io", "schiro.dpdns.org", "schiro.indevs.in", "mailshed.dev", "inboxfwd.net", "tempbox.one"] as const;
 
 export type Domain = (typeof DOMAINS)[number];
 
