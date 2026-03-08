@@ -8,11 +8,11 @@ const corsHeaders = {
 };
 
 const LOCAL_DOMAINS = [
-  "dollicons.com",
   "tinola.eu.cc",
   "schiro.qzz.io",
   "schiro.dpdns.org",
   "schiro.indevs.in",
+  "dollicons.com",
 ] as const;
 
 const BLOCKED_DOMAINS = new Set<string>([
