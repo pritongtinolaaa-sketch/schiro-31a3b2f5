@@ -134,6 +134,7 @@ export default function TempMailApp() {
   );
 
   const heroRef = useRef<HTMLDivElement | null>(null);
+  const inboxSectionRef = useRef<HTMLElement | null>(null);
   const creatingGuestInboxRef = useRef(false);
 
   useEffect(() => {
@@ -637,6 +638,13 @@ export default function TempMailApp() {
     toast.success("Signed out");
   };
 
+  const scrollToInbox = () => {
+    inboxSectionRef.current?.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  };
+
   const isLoggedIn = Boolean(session);
   const profileLabel =
     profileName ??
@@ -705,6 +713,12 @@ export default function TempMailApp() {
                   <Mail className="h-4 w-4" />
                   <span>Broadcast-driven updates</span>
                 </div>
+              </div>
+
+              <div className="mt-6">
+                <Button variant="outline" onClick={scrollToInbox}>
+                  Go to inbox ↓
+                </Button>
               </div>
             </div>
 
@@ -793,7 +807,7 @@ export default function TempMailApp() {
           </Card>
         ) : null}
 
-        <section className="grid gap-3 md:grid-cols-12">
+        <section ref={inboxSectionRef} className="grid gap-3 md:grid-cols-12">
           <Card className="md:col-span-5">
             <div className="flex items-center justify-between gap-4 border-b p-4">
               <div>
