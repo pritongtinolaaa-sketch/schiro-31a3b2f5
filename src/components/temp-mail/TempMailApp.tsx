@@ -106,6 +106,7 @@ export default function TempMailApp() {
 
   const [loadingInbox, setLoadingInbox] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [refreshCountdown, setRefreshCountdown] = useState(AUTO_REFRESH_SECONDS);
 
   const [emails, setEmails] = useState<TempMailMessage[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
