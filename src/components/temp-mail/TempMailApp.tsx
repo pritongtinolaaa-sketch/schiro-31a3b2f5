@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import InboxCreatorCard, { getTempMailDomains, type Domain } from "@/components/temp-mail/InboxCreatorCard";
 
@@ -110,6 +111,7 @@ export default function TempMailApp() {
   const [authLoading, setAuthLoading] = useState(false);
   const [ownedInboxes, setOwnedInboxes] = useState<OwnedInbox[]>([]);
   const [loadingOwnedInboxes, setLoadingOwnedInboxes] = useState(false);
+  const [selectedClaimedAddress, setSelectedClaimedAddress] = useState<string | null>(null);
   const [claimedSeenMap, setClaimedSeenMap] = useState<ClaimedSeenMap>({});
   const [deletingOwnedAddress, setDeletingOwnedAddress] = useState<string | null>(null);
 
@@ -118,6 +120,10 @@ export default function TempMailApp() {
   }, [activeId, emails]);
 
   const active = useMemo(() => emails.find((e) => e.id === activeId) ?? null, [emails, activeId]);
+  const selectedClaimedInbox = useMemo(
+    () => ownedInboxes.find((inbox) => inbox.address === selectedClaimedAddress) ?? ownedInboxes[0] ?? null,
+    [ownedInboxes, selectedClaimedAddress],
+  );
 
   const heroRef = useRef<HTMLDivElement | null>(null);
   const creatingGuestInboxRef = useRef(false);
@@ -125,6 +131,22 @@ export default function TempMailApp() {
   useEffect(() => {
     setClaimedSeenMap(readClaimedSeenMap());
   }, []);
+
+  useEffect(() => {
+    if (ownedInboxes.length === 0) {
+      if (selectedClaimedAddress !== null) setSelectedClaimedAddress(null);
+      return;
+    }
+
+    if (address && ownedInboxes.some((inbox) => inbox.address === address)) {
+      if (selectedClaimedAddress !== address) setSelectedClaimedAddress(address);
+      return;
+    }
+
+    if (!selectedClaimedAddress || !ownedInboxes.some((inbox) => inbox.address === selectedClaimedAddress)) {
+      setSelectedClaimedAddress(ownedInboxes[0].address);
+    }
+  }, [ownedInboxes, address, selectedClaimedAddress]);
 
   useEffect(() => {
     if (prefersReducedMotion) return;
@@ -661,52 +683,70 @@ export default function TempMailApp() {
               <div className="text-sm font-medium">Claimed email addresses</div>
               <div className="text-xs text-muted-foreground">Addresses tied to your account</div>
             </div>
-            <div className="max-h-56 overflow-auto p-4">
+            <div className="p-4">
               {loadingOwnedInboxes ? (
                 <div className="text-sm text-muted-foreground">Loading claimed addresses...</div>
-              ) : ownedInboxes.length === 0 ? (
+              ) : ownedInboxes.length === 0 || !selectedClaimedInbox ? (
                 <div className="text-sm text-muted-foreground">No claimed addresses yet.</div>
               ) : (
-                <ul className="space-y-2">
-                  {ownedInboxes.map((inbox) => {
-                    const selected = address === inbox.address;
-                    const latestReceivedAtTs = inbox.latestReceivedAt ? Date.parse(inbox.latestReceivedAt) : 0;
-                    const seenTs = claimedSeenMap[inbox.address] ?? 0;
-                    const hasUnread = latestReceivedAtTs > seenTs;
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void openClaimedInbox(selectedClaimedInbox)}
+                      disabled={loadingInbox || deletingOwnedAddress === selectedClaimedInbox.address}
+                      className={cn(
+                        "flex-1 rounded-lg border px-3 py-2 text-left transition-colors",
+                        address === selectedClaimedInbox.address ? "bg-accent/10" : "bg-surface-2 hover:bg-muted/50",
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm text-mono">{selectedClaimedInbox.address}</div>
+                        {(() => {
+                          const latestReceivedAtTs = selectedClaimedInbox.latestReceivedAt
+                            ? Date.parse(selectedClaimedInbox.latestReceivedAt)
+                            : 0;
+                          const seenTs = claimedSeenMap[selectedClaimedInbox.address] ?? 0;
+                          return latestReceivedAtTs > seenTs ? (
+                            <span className="inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium">Unread</span>
+                          ) : null;
+                        })()}
+                      </div>
+                    </button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      disabled={deletingOwnedAddress === selectedClaimedInbox.address}
+                      onClick={() => void handleDeleteOwnedInbox(selectedClaimedInbox.address)}
+                      aria-label={`Delete ${selectedClaimedInbox.address}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
 
-                    return (
-                      <li key={inbox.address} className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void openClaimedInbox(inbox)}
-                          disabled={loadingInbox || deletingOwnedAddress === inbox.address}
-                          className={cn(
-                            "flex-1 rounded-lg border px-3 py-2 text-left transition-colors",
-                            selected ? "bg-accent/10" : "bg-surface-2 hover:bg-muted/50",
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="text-sm text-mono">{inbox.address}</div>
-                            {hasUnread ? (
-                              <span className="inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium">Unread</span>
-                            ) : null}
-                          </div>
-                        </button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="shrink-0"
-                          disabled={deletingOwnedAddress === inbox.address}
-                          onClick={() => void handleDeleteOwnedInbox(inbox.address)}
-                          aria-label={`Delete ${inbox.address}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </li>
-                    );
-                  })}
-                </ul>
+                  <div className="space-y-1">
+                    <div className="text-xs text-muted-foreground">Other claimed emails</div>
+                    <Select value={selectedClaimedInbox.address} onValueChange={setSelectedClaimedAddress}>
+                      <SelectTrigger className="text-mono">
+                        <SelectValue placeholder="Pick claimed email" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ownedInboxes.map((inbox) => {
+                          const latestReceivedAtTs = inbox.latestReceivedAt ? Date.parse(inbox.latestReceivedAt) : 0;
+                          const seenTs = claimedSeenMap[inbox.address] ?? 0;
+                          const hasUnread = latestReceivedAtTs > seenTs;
+                          return (
+                            <SelectItem key={inbox.address} value={inbox.address} className="text-mono">
+                              {hasUnread ? `${inbox.address} • Unread` : inbox.address}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               )}
             </div>
           </Card>
