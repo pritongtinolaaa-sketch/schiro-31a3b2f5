@@ -732,12 +732,20 @@ export default function TempMailApp() {
                       <div className="space-y-3 p-4">
                         <div className="text-sm font-semibold">Visit my other projects</div>
                         <div className="grid gap-2">
-                          <Button asChild variant="hero" className="w-full justify-start">
+                          <Button
+                            asChild
+                            variant="hero"
+                            className="w-full justify-start shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
+                          >
                             <a href="https://schiro.eu.cc" target="_blank" rel="noopener noreferrer">
                               Schiro Cookie Checker - Netflix Checker
                             </a>
                           </Button>
-                          <Button asChild variant="secondary" className="w-full justify-start">
+                          <Button
+                            asChild
+                            variant="secondary"
+                            className="w-full justify-start shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
+                          >
                             <a href="https://schiropaste.lovable.app" target="_blank" rel="noopener noreferrer">
                               Schiropaste - Paste and Share
                             </a>
