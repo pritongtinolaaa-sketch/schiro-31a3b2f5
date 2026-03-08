@@ -22,6 +22,43 @@ async function broadcastNewMail(opts: { supabaseUrl: string; serviceKey: string;
   });
 }
 
+function decodeQuotedPrintable(input: string) {
+  return input
+    .replace(/=\r?\n/g, "")
+    .replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+}
+
+function extractReadableBody(raw: string) {
+  const normalized = String(raw ?? "").replace(/\r\n/g, "\n");
+
+  const boundaryMatch = normalized.match(/boundary="?([^"\n;]+)"?/i);
+  if (boundaryMatch) {
+    const boundary = `--${boundaryMatch[1]}`;
+    const parts = normalized.split(boundary);
+
+    for (const part of parts) {
+      if (!/content-type:\s*text\/plain/i.test(part)) continue;
+
+      const plain = part
+        .replace(/^[\s\S]*?\n\n/, "")
+        .replace(/\n--\s*$/, "")
+        .trim();
+
+      if (!plain) continue;
+      return decodeQuotedPrintable(plain).trim();
+    }
+  }
+
+  // Fallback for full RFC822 payloads: remove transport headers and keep content.
+  const sections = normalized.split(/\n\n/);
+  if (sections.length > 1) {
+    const maybeContent = sections.slice(1).join("\n\n").trim();
+    if (maybeContent) return maybeContent;
+  }
+
+  return normalized.trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -37,7 +74,7 @@ Deno.serve(async (req) => {
     }
 
     const { address, from, subject, body } = await req.json();
-    if (!address || !from || !subject || !body) {
+    if (!address || !from || !subject || body === undefined || body === null) {
       return new Response(JSON.stringify({ error: "Missing fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -69,11 +106,13 @@ Deno.serve(async (req) => {
       });
     }
 
+    const parsedBody = extractReadableBody(String(body));
+
     const { error: insertError } = await supabase.from("temp_mail_messages").insert({
       inbox_id: inbox.id,
       from_address: String(from),
       subject: String(subject),
-      body: String(body),
+      body: parsedBody || "(empty message)",
     });
 
     if (insertError) throw insertError;
