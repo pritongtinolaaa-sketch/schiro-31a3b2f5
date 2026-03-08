@@ -92,13 +92,73 @@ export async function createInbox(input?: {
   return data;
 }
 
+function decodeBase64Utf8(input: string) {
+  try {
+    const binary = atob(input.replace(/\s+/g, ""));
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return input;
+  }
+}
+
+function htmlToText(input: string) {
+  return input
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/p\s*>/gi, "\n\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function normalizeIncomingBody(body: string) {
+  const raw = String(body ?? "").trim();
+  if (!raw) return "";
+
+  const mimeBase64 = raw.match(/Content-Transfer-Encoding:\s*base64[\s\S]*?\n\n([A-Za-z0-9+/=\n\r]+)(?:\n--|$)/i)?.[1];
+  if (mimeBase64) {
+    const decoded = decodeBase64Utf8(mimeBase64);
+    if (decoded !== mimeBase64) {
+      const text = /<[^>]+>/.test(decoded) ? htmlToText(decoded) : decoded.trim();
+      if (text) return text;
+    }
+  }
+
+  const compact = raw.replace(/\s+/g, "");
+  if (compact.length > 120 && /^[A-Za-z0-9+/=]+$/.test(compact)) {
+    const decoded = decodeBase64Utf8(compact);
+    if (decoded !== raw) {
+      const text = /<[^>]+>/.test(decoded) ? htmlToText(decoded) : decoded.trim();
+      if (text) return text;
+    }
+  }
+
+  return raw;
+}
+
 export async function listMessages(input: { address: string; token: string }): Promise<ListMessagesResponse> {
   const { data, error } = await supabase.functions.invoke<ListMessagesResponse>("temp-mail-list-messages", {
     body: input,
   });
   if (error) throw error;
   if (!data?.messages) throw new Error("Invalid response");
-  return data;
+
+  const messages = data.messages.map((message) => {
+    const body = normalizeIncomingBody(message.body);
+    const preview = body.split("\n").find((line) => line.trim().length > 0)?.trim() ?? message.preview;
+    return { ...message, body, preview };
+  });
+
+  return { ...data, messages };
 }
 
 export async function sendTestEmail(input: { address: string; token: string }) {
