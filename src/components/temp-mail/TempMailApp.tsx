@@ -79,6 +79,7 @@ export default function TempMailApp() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [authEmail, setAuthEmail] = useState("");
@@ -93,6 +94,7 @@ export default function TempMailApp() {
   const active = useMemo(() => emails.find((e) => e.id === activeId) ?? null, [emails, activeId]);
 
   const heroRef = useRef<HTMLDivElement | null>(null);
+  const creatingGuestInboxRef = useRef(false);
 
   useEffect(() => {
     if (prefersReducedMotion) return;
