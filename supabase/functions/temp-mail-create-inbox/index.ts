@@ -42,11 +42,36 @@ function randomLocalPart() {
   return `${a}.${n}${num}`;
 }
 
-async function isAllowedDomain(input: unknown): Promise<boolean> {
+async function isOwnedDomain(supabase: any, requesterUserId: string | null, domain: string): Promise<boolean> {
+  if (!requesterUserId) return false;
+
+  const pattern = `%@${domain}`;
+  const { data, error } = await supabase
+    .from("temp_mail_inboxes")
+    .select("id")
+    .eq("owner_profile_id", requesterUserId)
+    .ilike("email_address", pattern)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return false;
+  return Boolean(data?.id);
+}
+
+async function isAllowedDomain(input: unknown, supabase: any, requesterUserId: string | null): Promise<boolean> {
   if (typeof input !== "string") return false;
-  if ((LOCAL_DOMAINS as readonly string[]).includes(input)) return true;
-  const mailTmDomains = await fetchMailTmDomains();
-  return mailTmDomains.includes(input);
+  const domain = input.trim().toLowerCase();
+  if (!domain) return false;
+
+  if ((LOCAL_DOMAINS as readonly string[]).includes(domain)) return true;
+
+  const [mailTmDomains, owned] = await Promise.all([
+    fetchMailTmDomains(),
+    isOwnedDomain(supabase, requesterUserId, domain),
+  ]);
+
+  if (owned) return true;
+  return mailTmDomains.includes(domain);
 }
 
 function base64Url(bytes: Uint8Array) {
@@ -93,7 +118,7 @@ Deno.serve(async (req) => {
 
     try {
       const body = await req.json().catch(() => ({}));
-      if (await isAllowedDomain(body?.domain)) chosenDomain = body.domain;
+      if (await isAllowedDomain(body?.domain, supabase, requesterUserId)) chosenDomain = String(body.domain).trim().toLowerCase();
       if (typeof body?.localPart === "string") chosenLocalPart = body.localPart.trim() || null;
       if (typeof body?.reclaimToken === "string") reclaimToken = body.reclaimToken.trim() || null;
     } catch {
