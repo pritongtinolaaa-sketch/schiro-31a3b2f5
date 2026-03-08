@@ -18,6 +18,7 @@ import {
   clearSavedInbox,
   createInbox,
   deleteMessage,
+  deleteOwnedInbox,
   listMessages,
   listOwnedInboxes,
   loadSavedInbox,
