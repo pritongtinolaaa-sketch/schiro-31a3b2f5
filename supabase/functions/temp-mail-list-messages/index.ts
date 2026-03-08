@@ -232,8 +232,27 @@ function normalizeBody(input: unknown) {
   return extracted;
 }
 
+function decodeMessageBody(rawInput: unknown) {
+  const raw = String(rawInput ?? "").trim();
+  if (!raw) return "";
+
+  const compact = raw.replace(/\s+/g, "");
+  if (compact.length > 80 && /^[A-Za-z0-9+/=]+$/.test(compact)) {
+    const decoded = decodeBase64(raw);
+    if (decoded && decoded !== raw) {
+      if (looksLikeHtml(decoded)) {
+        const text = htmlToText(decoded).trim();
+        if (text) return text;
+      }
+      return decodeHtmlEntities(decoded).trim();
+    }
+  }
+
+  return normalizeBody(raw);
+}
+
 function toMessageRow(row: any) {
-  const body = normalizeBody(row.body);
+  const body = decodeMessageBody(row.body);
   const previewLine = body.split("\n").find((l) => l.trim().length > 0) ?? body.slice(0, 80);
   return {
     id: row.id,
