@@ -739,7 +739,7 @@ export default function TempMailApp() {
                           </Button>
                           <Button asChild variant="secondary" className="w-full justify-start">
                             <a href="https://schiropaste.lovable.app" target="_blank" rel="noopener noreferrer">
-                              Schiropaste - Paste and share
+                              Schiropaste - Paste and Share
                             </a>
                           </Button>
                         </div>
