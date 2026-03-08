@@ -79,6 +79,7 @@ export default function TempMailApp() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [authEmail, setAuthEmail] = useState("");
@@ -93,6 +94,7 @@ export default function TempMailApp() {
   const active = useMemo(() => emails.find((e) => e.id === activeId) ?? null, [emails, activeId]);
 
   const heroRef = useRef<HTMLDivElement | null>(null);
+  const creatingGuestInboxRef = useRef(false);
 
   useEffect(() => {
     if (prefersReducedMotion) return;
@@ -126,6 +128,7 @@ export default function TempMailApp() {
       setSession(currentSession);
       const nextUser = currentSession?.user ?? null;
       setUser(nextUser);
+      setAuthReady(true);
       if (nextUser) {
         void loadProfile(nextUser.id);
       } else {
@@ -139,7 +142,10 @@ export default function TempMailApp() {
       setUser(nextUser);
       if (nextUser) {
         void loadProfile(nextUser.id);
+      } else {
+        setProfileName(null);
       }
+      setAuthReady(true);
     });
 
     return () => listener.subscription.unsubscribe();
@@ -175,6 +181,31 @@ export default function TempMailApp() {
       setLoadingInbox(false);
     }
   };
+
+  useEffect(() => {
+    if (!authReady || loadingInbox || user || address || creatingGuestInboxRef.current) return;
+
+    const domain = selectedDomain ?? DOMAINS[0];
+    if (!selectedDomain) setSelectedDomain(domain);
+
+    creatingGuestInboxRef.current = true;
+    setLoadingInbox(true);
+
+    void createInbox({ domain })
+      .then((created) => {
+        setAddress(created.address);
+        setToken(created.token);
+        setExpiresAt(created.expiresAt);
+        saveInbox(created);
+      })
+      .catch((e: any) => {
+        toast.error("Couldn't create guest inbox", { description: e?.message ?? "Please try again." });
+      })
+      .finally(() => {
+        creatingGuestInboxRef.current = false;
+        setLoadingInbox(false);
+      });
+  }, [authReady, loadingInbox, user, address, selectedDomain]);
 
   useEffect(() => {
     void ensureInbox();
