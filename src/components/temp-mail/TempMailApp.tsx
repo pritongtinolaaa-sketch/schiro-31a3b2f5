@@ -89,6 +89,8 @@ export default function TempMailApp() {
   const [authPassword, setAuthPassword] = useState("");
   const [authDisplayName, setAuthDisplayName] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [ownedInboxes, setOwnedInboxes] = useState<OwnedInbox[]>([]);
+  const [loadingOwnedInboxes, setLoadingOwnedInboxes] = useState(false);
 
   useEffect(() => {
     if (!activeId && emails[0]?.id) setActiveId(emails[0].id);
