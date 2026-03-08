@@ -185,6 +185,14 @@ export default function TempMailApp() {
       const res = await listMessages({ address, token });
       setEmails(res.messages);
       setExpiresAt(res.expiresAt);
+
+      const latestSeenTs = res.messages[0]?.receivedAt ?? Date.now();
+      setClaimedSeenMap((prev) => {
+        if ((prev[address] ?? 0) >= latestSeenTs) return prev;
+        const next = { ...prev, [address]: latestSeenTs };
+        writeClaimedSeenMap(next);
+        return next;
+      });
     } catch (e: any) {
       toast.error("Couldn't load inbox", { description: e?.message ?? "Please try again." });
     } finally {
