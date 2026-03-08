@@ -369,7 +369,7 @@ export default function TempMailApp() {
         setAddress(saved.address);
         setToken(saved.token);
         setExpiresAt(saved.expiresAt);
-        const d = domainFromAddress(saved.address);
+        const d = domainFromAddress(saved.address, availableDomains);
         if (d) setSelectedDomain(d);
       }
     } finally {
