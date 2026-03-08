@@ -756,7 +756,7 @@ export default function TempMailApp() {
                 <div className="text-sm text-muted-foreground">No claimed addresses yet.</div>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <Select
                       value={selectedClaimedInbox.address}
                       onValueChange={(value) => void handleClaimedAddressSelect(value)}
@@ -778,28 +778,30 @@ export default function TempMailApp() {
                         })}
                       </SelectContent>
                     </Select>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0"
-                      disabled={deletingOwnedAddress === selectedClaimedInbox.address}
-                      onClick={() => void copyClaimedAddress(selectedClaimedInbox.address)}
-                      aria-label={`Copy ${selectedClaimedInbox.address}`}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0"
-                      disabled={deletingOwnedAddress === selectedClaimedInbox.address}
-                      onClick={() => void handleDeleteOwnedInbox(selectedClaimedInbox.address)}
-                      aria-label={`Delete ${selectedClaimedInbox.address}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0"
+                        disabled={deletingOwnedAddress === selectedClaimedInbox.address}
+                        onClick={() => void copyClaimedAddress(selectedClaimedInbox.address)}
+                        aria-label={`Copy ${selectedClaimedInbox.address}`}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0"
+                        disabled={deletingOwnedAddress === selectedClaimedInbox.address}
+                        onClick={() => void handleDeleteOwnedInbox(selectedClaimedInbox.address)}
+                        aria-label={`Delete ${selectedClaimedInbox.address}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
