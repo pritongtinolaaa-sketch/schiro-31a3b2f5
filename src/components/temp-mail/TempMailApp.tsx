@@ -81,6 +81,60 @@ function formatTime(ts: number) {
   });
 }
 
+function decodeBodyForDisplay(input: string) {
+  const raw = String(input ?? "").trim();
+  if (!raw) return "";
+
+  const decodeBase64Utf8 = (value: string) => {
+    try {
+      const binary = atob(value.replace(/\s+/g, ""));
+      const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    } catch {
+      return value;
+    }
+  };
+
+  const toText = (value: string) =>
+    value
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<br\s*\/?\s*>/gi, "\n")
+      .replace(/<\/p\s*>/gi, "\n\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+  const mimeBase64 = raw.match(/Content-Transfer-Encoding:\s*base64[\s\S]*?\n\n([A-Za-z0-9+/=\n\r]+)(?:\n--|$)/i)?.[1];
+  const candidate = mimeBase64 ?? raw;
+  const compact = candidate.replace(/\s+/g, "");
+
+  if (compact.length > 80 && /^[A-Za-z0-9+/=]+$/.test(compact)) {
+    const decoded = decodeBase64Utf8(compact);
+    if (decoded !== compact) {
+      if (/<[^>]+>/.test(decoded)) {
+        const text = toText(decoded);
+        if (text) return text;
+      }
+      return decoded.trim();
+    }
+  }
+
+  if (/<[^>]+>/.test(raw)) {
+    const text = toText(raw);
+    if (text) return text;
+  }
+
+  return raw;
+}
+
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
 
@@ -996,7 +1050,7 @@ export default function TempMailApp() {
                   </div>
 
                   <div className="mt-5 rounded-xl border bg-background p-4 shadow-sm">
-                    <pre className="m-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-foreground">{active.body}</pre>
+                    <pre className="m-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-foreground">{decodeBodyForDisplay(active.body)}</pre>
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
