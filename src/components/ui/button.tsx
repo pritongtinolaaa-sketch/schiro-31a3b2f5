@@ -17,7 +17,8 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         hero:
           "bg-primary text-primary-foreground shadow-glow hover:shadow-glow hover:brightness-110 hover:saturate-125 focus-visible:ring-ring",
-      },
+        glass:
+          "glass border border-border text-foreground shadow-elev hover:shadow-glow",
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-9 rounded-md px-3",
