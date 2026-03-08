@@ -50,6 +50,15 @@ function decodeQuotedPrintable(input: string) {
     .replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 }
 
+function decodeBase64(input: string) {
+  try {
+    const compact = input.replace(/\s+/g, "");
+    return atob(compact);
+  } catch {
+    return input;
+  }
+}
+
 function decodeHtmlEntities(input: string) {
   return input
     .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)))
@@ -80,15 +89,147 @@ function htmlToText(input: string) {
   );
 }
 
+function splitHeadersAndBody(part: string) {
+  const normalized = part.replace(/\r\n/g, "\n");
+  const idx = normalized.indexOf("\n\n");
+  if (idx === -1) return { headersRaw: "", bodyRaw: normalized };
+  return {
+    headersRaw: normalized.slice(0, idx),
+    bodyRaw: normalized.slice(idx + 2),
+  };
+}
+
+function parseHeaders(headersRaw: string) {
+  const result: Record<string, string> = {};
+  let currentKey = "";
+
+  for (const line of headersRaw.split("\n")) {
+    if (/^[ \t]/.test(line) && currentKey) {
+      result[currentKey] += ` ${line.trim()}`;
+      continue;
+    }
+
+    const idx = line.indexOf(":");
+    if (idx === -1) continue;
+    currentKey = line.slice(0, idx).trim().toLowerCase();
+    result[currentKey] = line.slice(idx + 1).trim();
+  }
+
+  return result;
+}
+
+function getBoundary(contentType: string) {
+  const m = contentType.match(/boundary=(?:"([^"]+)"|([^;\s]+))/i);
+  return (m?.[1] ?? m?.[2] ?? "").trim();
+}
+
+function decodeTransferEncoding(body: string, encoding: string) {
+  const normalized = encoding.toLowerCase();
+  if (normalized.includes("quoted-printable")) return decodeQuotedPrintable(body);
+  if (normalized.includes("base64")) return decodeBase64(body);
+  return body;
+}
+
+function collectReadableBodies(rawPart: string, plain: string[], html: string[], depth = 0) {
+  if (depth > 8) return;
+
+  const { headersRaw, bodyRaw } = splitHeadersAndBody(rawPart);
+  const headers = parseHeaders(headersRaw);
+  const hasExplicitContentType = Boolean(headers["content-type"]);
+  const contentType = (headers["content-type"] ?? "text/plain").toLowerCase();
+  const transferEncoding = headers["content-transfer-encoding"] ?? "";
+
+  if (contentType.includes("multipart/")) {
+    const boundary = getBoundary(contentType);
+    if (!boundary) return;
+
+    const token = `--${boundary}`;
+    const parts = bodyRaw.split(token);
+
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (!trimmed || trimmed === "--") continue;
+      if (trimmed.startsWith("--")) continue;
+      collectReadableBodies(trimmed, plain, html, depth + 1);
+    }
+    return;
+  }
+
+  const decoded = decodeTransferEncoding(bodyRaw, transferEncoding).trim();
+  if (!decoded) return;
+
+  if (contentType.includes("text/plain")) {
+    if (!hasExplicitContentType && looksLikeHtml(decoded)) {
+      const text = htmlToText(decoded);
+      if (text) html.push(text);
+      return;
+    }
+    plain.push(decoded);
+    return;
+  }
+
+  if (contentType.includes("text/html")) {
+    const text = htmlToText(decoded);
+    if (text) html.push(text);
+  }
+}
+
+function extractReadableBody(raw: string) {
+  const normalized = String(raw ?? "").replace(/\r\n/g, "\n");
+  const plain: string[] = [];
+  const html: string[] = [];
+
+  const firstLine = normalized.split("\n", 1)[0]?.trim() ?? "";
+  if (firstLine.startsWith("--") && normalized.includes("Content-Transfer-Encoding")) {
+    const boundary = firstLine.slice(2).trim();
+    const token = `--${boundary}`;
+    const parts = normalized.split(token);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (!trimmed || trimmed === "--" || trimmed.startsWith("--")) continue;
+      collectReadableBodies(trimmed, plain, html, 1);
+    }
+  } else {
+    collectReadableBodies(normalized, plain, html);
+  }
+
+  if (plain.length > 0) return plain.join("\n\n").trim();
+  if (html.length > 0) return html.join("\n\n").trim();
+
+  const { bodyRaw } = splitHeadersAndBody(normalized);
+  const fallback = decodeQuotedPrintable(bodyRaw).trim();
+  if (!fallback) return normalized.trim();
+
+  if (looksLikeHtml(fallback)) {
+    const text = htmlToText(fallback);
+    return text || fallback;
+  }
+
+  return decodeHtmlEntities(fallback).trim();
+}
+
+function looksLikeBase64Block(input: string) {
+  const compact = input.replace(/\s+/g, "");
+  return compact.length > 80 && /^[A-Za-z0-9+/=]+$/.test(compact);
+}
+
 function normalizeBody(input: unknown) {
   const raw = String(input ?? "").trim();
   if (!raw) return "";
-  const decoded = decodeQuotedPrintable(raw);
-  if (looksLikeHtml(decoded)) {
-    const text = htmlToText(decoded).trim();
-    return text || decoded;
+
+  const extracted = extractReadableBody(raw);
+  if (looksLikeBase64Block(extracted)) {
+    const decoded = decodeBase64(extracted);
+    if (decoded !== extracted) {
+      if (looksLikeHtml(decoded)) {
+        const text = htmlToText(decoded).trim();
+        if (text) return text;
+      }
+      return decodeHtmlEntities(decoded).trim();
+    }
   }
-  return decodeHtmlEntities(decoded).trim();
+
+  return extracted;
 }
 
 function toMessageRow(row: any) {
