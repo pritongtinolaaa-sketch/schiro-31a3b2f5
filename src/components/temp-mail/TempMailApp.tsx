@@ -384,6 +384,7 @@ export default function TempMailApp() {
       setLocalPart("");
 
       toast.success("Random email generated", { description: created.address });
+      if (user) await refreshOwnedInboxes();
     } catch (e: any) {
       toast.error("Couldn't regenerate email", { description: e?.message ?? "Please try again." });
     } finally {
