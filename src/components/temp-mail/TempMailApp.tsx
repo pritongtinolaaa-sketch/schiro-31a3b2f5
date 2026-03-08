@@ -703,6 +703,7 @@ export default function TempMailApp() {
                 loadingInbox={loadingInbox}
                 address={address}
                 expiresAt={expiresAt}
+                domains={availableDomains}
                 selectedDomain={selectedDomain}
                 onSelectedDomainChange={setSelectedDomain}
                 localPart={localPart}
