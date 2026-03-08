@@ -811,22 +811,34 @@ export default function TempMailApp() {
 
         <section ref={inboxSectionRef} className="grid gap-3 md:grid-cols-12">
           <Card className="md:col-span-5">
-            <div className="flex items-center justify-between gap-4 border-b p-4">
+            <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="text-sm font-medium">Inbox</div>
                 <div className="text-xs text-muted-foreground">{emails.length} message(s)</div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="secondary" size="sm" onClick={receiveTestEmail} disabled={loadingInbox || !address}>
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1 sm:flex-none"
+                  onClick={receiveTestEmail}
+                  disabled={loadingInbox || !address}
+                >
                   <Inbox /> Receive
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => void refreshMessages()} disabled={loadingMessages || !address}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 sm:flex-none"
+                  onClick={() => void refreshMessages()}
+                  disabled={loadingMessages || !address}
+                >
                   Refresh
                 </Button>
               </div>
             </div>
 
-            <div className="max-h-[460px] overflow-auto">
+            <div className="max-h-[52vh] overflow-auto md:max-h-[460px]">
               {emails.length === 0 ? (
                 <div className="p-6">
                   <div className="rounded-xl border bg-surface-2 p-5 shadow-sm">
