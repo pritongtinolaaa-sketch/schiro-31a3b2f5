@@ -545,6 +545,30 @@ export default function TempMailApp() {
       </header>
 
       <main className="container py-8 md:py-10">
+        {isLoggedIn ? (
+          <Card className="mb-4">
+            <div className="border-b p-4">
+              <div className="text-sm font-medium">Claimed email addresses</div>
+              <div className="text-xs text-muted-foreground">Addresses tied to your account</div>
+            </div>
+            <div className="max-h-56 overflow-auto p-4">
+              {loadingOwnedInboxes ? (
+                <div className="text-sm text-muted-foreground">Loading claimed addresses...</div>
+              ) : ownedInboxes.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No claimed addresses yet.</div>
+              ) : (
+                <ul className="space-y-2">
+                  {ownedInboxes.map((inbox) => (
+                    <li key={inbox.address} className="rounded-lg border bg-surface-2 px-3 py-2">
+                      <div className="text-sm text-mono">{inbox.address}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </Card>
+        ) : null}
+
         <section className="grid gap-4 md:grid-cols-12">
           <Card className="md:col-span-5">
             <div className="flex items-center justify-between gap-4 border-b p-4">
