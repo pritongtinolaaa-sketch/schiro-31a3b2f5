@@ -19,11 +19,13 @@ import {
   createInbox,
   deleteMessage,
   listMessages,
+  listOwnedInboxes,
   loadSavedInbox,
   saveInbox,
   getKnownInboxToken,
   sendTestEmail,
   subscribeToInbox,
+  type OwnedInbox,
   type TempMailMessage,
 } from "./cloudTempMail";
 
