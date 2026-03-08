@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Copy, Inbox, Mail, Shield, Sparkles, Trash2 } from "lucide-react";
 
@@ -97,7 +97,7 @@ export default function TempMailApp() {
     return () => el.removeEventListener("pointermove", onMove);
   }, [prefersReducedMotion]);
 
-  const refreshMessages = async (opts?: { silent?: boolean }) => {
+  const refreshMessages = useCallback(async (opts?: { silent?: boolean }) => {
     if (!address || !token) return;
     if (!opts?.silent) setLoadingMessages(true);
 
@@ -110,7 +110,7 @@ export default function TempMailApp() {
     } finally {
       setLoadingMessages(false);
     }
-  };
+  }, [address, token]);
 
   const ensureInbox = async () => {
     setLoadingInbox(true);
@@ -143,8 +143,17 @@ export default function TempMailApp() {
     });
 
     return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, token]);
+  }, [address, token, refreshMessages]);
+
+  useEffect(() => {
+    if (!address || !token) return;
+
+    const intervalId = window.setInterval(() => {
+      void refreshMessages({ silent: true });
+    }, 15000);
+
+    return () => window.clearInterval(intervalId);
+  }, [address, token, refreshMessages]);
 
   const copyAddress = async () => {
     if (!address) return;
