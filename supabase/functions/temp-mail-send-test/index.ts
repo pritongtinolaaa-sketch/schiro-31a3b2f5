@@ -33,6 +33,17 @@ async function broadcastNewMail(opts: { supabaseUrl: string; serviceKey: string;
   });
 }
 
+const CATCHMAIL_DOMAINS = new Set(["catchmail.io", "mailistry.com", "zeppost.com"]);
+
+function domainFromAddress(address: string): string {
+  const at = address.lastIndexOf("@");
+  return at === -1 ? "" : address.slice(at + 1).trim().toLowerCase();
+}
+
+function isCatchmailAddress(address: string) {
+  return CATCHMAIL_DOMAINS.has(domainFromAddress(address));
+}
+
 function makeDemoEmail() {
   const senders = [
     "no-reply@streamvault.app",
