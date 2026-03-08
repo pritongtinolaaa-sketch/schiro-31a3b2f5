@@ -42,9 +42,11 @@ Deno.serve(async (req) => {
 
   try {
     const external = await fetchMailTmDomains();
-    const set = new Set<string>([...LOCAL_DOMAINS, ...external]);
+    const localSet = new Set<string>(LOCAL_DOMAINS);
+    const externalOnly = Array.from(new Set(external)).filter((domain) => !localSet.has(domain)).sort((a, b) => a.localeCompare(b));
+    const domains = [...LOCAL_DOMAINS, ...externalOnly];
 
-    return new Response(JSON.stringify({ domains: Array.from(set) }), {
+    return new Response(JSON.stringify({ domains }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
