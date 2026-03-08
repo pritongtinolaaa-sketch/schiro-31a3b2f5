@@ -714,6 +714,12 @@ export default function TempMailApp() {
                   <span>Broadcast-driven updates</span>
                 </div>
               </div>
+
+              <div className="mt-6">
+                <Button variant="outline" onClick={scrollToInbox}>
+                  Go to inbox ↓
+                </Button>
+              </div>
             </div>
 
             <div className="md:col-span-5">
