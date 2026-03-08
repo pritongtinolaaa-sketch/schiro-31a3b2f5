@@ -50,10 +50,34 @@ function decodeQuotedPrintable(input: string) {
     .replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 }
 
+function readabilityScore(input: string) {
+  if (!input) return 0;
+  let readable = 0;
+
+  for (const ch of input) {
+    const code = ch.charCodeAt(0);
+    const isPrintableAscii = code >= 32 && code <= 126;
+    const isWhitespace = ch === "\n" || ch === "\r" || ch === "\t";
+    const isCommonUnicode = code >= 0xa0;
+    if (isPrintableAscii || isWhitespace || isCommonUnicode) readable += 1;
+  }
+
+  return readable / input.length;
+}
+
 function decodeBase64(input: string) {
   try {
-    const compact = input.replace(/\s+/g, "");
-    return atob(compact);
+    const compact = input.replace(/[^A-Za-z0-9+/=_-]/g, "").replace(/-/g, "+").replace(/_/g, "/");
+    if (!compact) return input;
+
+    const padded = compact.padEnd(Math.ceil(compact.length / 4) * 4, "=");
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
+
+    const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    const latin1 = binary;
+
+    return readabilityScore(utf8) >= readabilityScore(latin1) ? utf8 : latin1;
   } catch {
     return input;
   }
