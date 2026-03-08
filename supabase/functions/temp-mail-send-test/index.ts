@@ -44,7 +44,7 @@ function makeDemoEmail() {
   const from = senders[Math.floor(Math.random() * senders.length)];
   const subject = subjects[Math.floor(Math.random() * subjects.length)];
   const code = String(Math.floor(Math.random() * 900000) + 100000);
-  const body = `Hi there,\n\nThis is a real stored message in your temporary inbox.\n\nVerification code: ${code}\n\n— Temp Mail`;
+  const body = `Hi there,\n\nThis is a real stored message in your temporary inbox.\n\nVerification code: ${code}\n\n— schiromail`;
   return { from_address: from, subject, body };
 }
 
