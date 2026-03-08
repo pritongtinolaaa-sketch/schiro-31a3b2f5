@@ -645,7 +645,7 @@ export default function TempMailApp() {
   return (
     <div className="min-h-screen">
       <nav className="sticky top-0 z-50 border-b bg-background/85 backdrop-blur-md">
-        <div className="container flex h-14 items-center justify-between">
+        <div className="container max-w-6xl flex h-14 items-center justify-between">
           <div className="inline-flex items-center gap-2">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <Mail className="h-4 w-4" />
@@ -670,14 +670,14 @@ export default function TempMailApp() {
 
       <header ref={heroRef} className="relative overflow-hidden border-b bg-hero">
         <div className="pointer-events-none absolute inset-0 opacity-70" />
-        <div className="container relative py-10 md:py-14">
-          <div className="grid gap-8 md:grid-cols-12 md:items-start">
+        <div className="container max-w-6xl relative py-8 md:py-10">
+          <div className="grid gap-6 md:grid-cols-12 md:items-start">
             <div className="md:col-span-7">
               <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow-elev">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Real inbox • persisted • realtime updates</span>
               </div>
-              <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight md:text-5xl">
+              <h1 className="mt-4 text-balance text-3xl font-semibold tracking-tight md:text-4xl xl:text-5xl">
                 Temporary email, now with persistence and realtime delivery.
               </h1>
               <p className="mt-3 max-w-2xl text-pretty text-base text-muted-foreground md:text-lg">
@@ -728,7 +728,7 @@ export default function TempMailApp() {
         </div>
       </header>
 
-      <main className="container py-8 md:py-10">
+      <main className="container max-w-6xl py-6 md:py-8">
         {isLoggedIn ? (
           <Card className="mb-4">
             <div className="border-b p-4">
@@ -793,7 +793,7 @@ export default function TempMailApp() {
           </Card>
         ) : null}
 
-        <section className="grid gap-4 md:grid-cols-12">
+        <section className="grid gap-3 md:grid-cols-12">
           <Card className="md:col-span-5">
             <div className="flex items-center justify-between gap-4 border-b p-4">
               <div>
@@ -810,7 +810,7 @@ export default function TempMailApp() {
               </div>
             </div>
 
-            <div className="max-h-[520px] overflow-auto">
+            <div className="max-h-[460px] overflow-auto">
               {emails.length === 0 ? (
                 <div className="p-6">
                   <div className="rounded-xl border bg-surface-2 p-5 shadow-sm">
@@ -900,7 +900,7 @@ export default function TempMailApp() {
           </Card>
         </section>
 
-        <footer className="mt-10 border-t pt-6 text-center text-xs text-muted-foreground">
+        <footer className="mt-8 border-t pt-6 text-center text-xs text-muted-foreground">
           <p>© Schiro 2026</p>
         </footer>
       </main>
