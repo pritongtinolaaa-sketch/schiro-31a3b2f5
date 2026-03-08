@@ -75,6 +75,16 @@ export default function TempMailApp() {
   const [emails, setEmails] = useState<TempMailMessage[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authDisplayName, setAuthDisplayName] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
   useEffect(() => {
     if (!activeId && emails[0]?.id) setActiveId(emails[0].id);
   }, [activeId, emails]);
