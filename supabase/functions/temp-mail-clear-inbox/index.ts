@@ -139,7 +139,11 @@ Deno.serve(async (req) => {
       await clearCatchmailInbox(String(address));
     } else if (isMailsacAddress(String(address))) {
       await clearMailsacInbox(String(address));
-    } else {
+    } else if (INBOXKITTEN_DOMAINS.has(domainFromAddress(String(address)))) {
+      return new Response(JSON.stringify({ error: "InboxKitten messages are public and remote clear is not supported." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
       const { error: delError } = await supabase.from("temp_mail_messages").delete().eq("inbox_id", inbox.id);
       if (delError) throw delError;
     }

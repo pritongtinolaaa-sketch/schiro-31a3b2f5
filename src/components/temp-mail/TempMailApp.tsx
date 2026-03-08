@@ -819,6 +819,7 @@ export default function TempMailApp() {
                 onCopy={() => void copyAddress()}
                 onClear={() => void clearInbox()}
                 onGoToInbox={scrollToInbox}
+                getDomainNote={getDomainNote}
               />
             </div>
           </div>

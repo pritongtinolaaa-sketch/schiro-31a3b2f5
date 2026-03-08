@@ -109,6 +109,9 @@ export default function InboxCreatorCard(props: {
               ))}
             </SelectContent>
           </Select>
+          {getDomainNote?.(selectedDomain) ? (
+            <div className="text-xs text-muted-foreground">Note: {getDomainNote(selectedDomain)}</div>
+          ) : null}
 
           <div className="mt-3">
             <Button
