@@ -32,7 +32,15 @@ import {
   type TempMailMessage,
 } from "./cloudTempMail";
 
-const DOMAINS = getTempMailDomains();
+const DEFAULT_DOMAINS: Domain[] = [
+  "tinola.eu.cc",
+  "schiro.qzz.io",
+  "schiro.dpdns.org",
+  "schiro.indevs.in",
+  "mailshed.dev",
+  "inboxfwd.net",
+  "tempbox.one",
+];
 const CLAIMED_INBOX_SEEN_KEY = "temp_mail_claimed_seen_v1";
 
 type ClaimedSeenMap = Record<string, number>;
