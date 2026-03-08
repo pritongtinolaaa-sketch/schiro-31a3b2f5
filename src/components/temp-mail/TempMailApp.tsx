@@ -120,6 +120,10 @@ export default function TempMailApp() {
   }, [activeId, emails]);
 
   const active = useMemo(() => emails.find((e) => e.id === activeId) ?? null, [emails, activeId]);
+  const selectedClaimedInbox = useMemo(
+    () => ownedInboxes.find((inbox) => inbox.address === selectedClaimedAddress) ?? ownedInboxes[0] ?? null,
+    [ownedInboxes, selectedClaimedAddress],
+  );
 
   const heroRef = useRef<HTMLDivElement | null>(null);
   const creatingGuestInboxRef = useRef(false);
