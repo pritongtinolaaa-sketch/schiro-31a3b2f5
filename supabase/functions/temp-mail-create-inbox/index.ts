@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const DOMAINS = ["mailshed.dev", "inboxfwd.net", "tempbox.one"] as const;
+const DOMAINS = ["mailshed.dev", "inboxfwd.net", "tempbox.one", "tinola.eu.cc"] as const;
 
 type Domain = (typeof DOMAINS)[number];
 

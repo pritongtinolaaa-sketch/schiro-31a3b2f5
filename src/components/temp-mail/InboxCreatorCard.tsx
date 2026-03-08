@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const DOMAINS = ["mailshed.dev", "inboxfwd.net", "tempbox.one"] as const;
+const DOMAINS = ["mailshed.dev", "inboxfwd.net", "tempbox.one", "tinola.eu.cc"] as const;
 
 export type Domain = (typeof DOMAINS)[number];
 
