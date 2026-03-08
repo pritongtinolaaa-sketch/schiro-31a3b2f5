@@ -21,6 +21,7 @@ import {
   listMessages,
   loadSavedInbox,
   saveInbox,
+  getKnownInboxToken,
   sendTestEmail,
   subscribeToInbox,
   type TempMailMessage,
