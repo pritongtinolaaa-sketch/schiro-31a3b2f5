@@ -807,7 +807,7 @@ export default function TempMailApp() {
           </Card>
         ) : null}
 
-        <section className="grid gap-3 md:grid-cols-12">
+        <section ref={inboxSectionRef} className="grid gap-3 md:grid-cols-12">
           <Card className="md:col-span-5">
             <div className="flex items-center justify-between gap-4 border-b p-4">
               <div>
