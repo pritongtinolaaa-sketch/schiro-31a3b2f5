@@ -11,18 +11,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const DOMAINS = ["tinola.eu.cc", "schiro.qzz.io", "schiro.dpdns.org", "schiro.indevs.in", "mailshed.dev", "inboxfwd.net", "tempbox.one"] as const;
-
-export type Domain = (typeof DOMAINS)[number];
-
-export function getTempMailDomains(): readonly Domain[] {
-  return DOMAINS;
-}
+export type Domain = string;
 
 export default function InboxCreatorCard(props: {
   loadingInbox: boolean;
   address: string | null;
   expiresAt: string | null;
+  domains: Domain[];
 
   selectedDomain: Domain | null;
   onSelectedDomainChange: (d: Domain) => void;
@@ -39,6 +34,7 @@ export default function InboxCreatorCard(props: {
     loadingInbox,
     address,
     expiresAt,
+    domains,
     selectedDomain,
     onSelectedDomainChange,
     localPart,
@@ -97,12 +93,12 @@ export default function InboxCreatorCard(props: {
           </div>
 
           <label className="mt-2 text-xs text-muted-foreground">Choose domain</label>
-          <Select value={selectedDomain ?? undefined} onValueChange={(v) => onSelectedDomainChange(v as Domain)} disabled={loadingInbox}>
+          <Select value={selectedDomain ?? undefined} onValueChange={onSelectedDomainChange} disabled={loadingInbox || domains.length === 0}>
             <SelectTrigger className="text-mono">
               <SelectValue placeholder="Select a domain" />
             </SelectTrigger>
             <SelectContent>
-              {DOMAINS.map((d) => (
+              {domains.map((d) => (
                 <SelectItem key={d} value={d} className="text-mono">
                   @{d}
                 </SelectItem>

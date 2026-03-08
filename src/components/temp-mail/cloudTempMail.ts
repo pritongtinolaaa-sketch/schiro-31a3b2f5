@@ -127,6 +127,12 @@ export async function listOwnedInboxes(): Promise<OwnedInbox[]> {
   return data?.inboxes ?? [];
 }
 
+export async function listAvailableDomains(): Promise<string[]> {
+  const { data, error } = await supabase.functions.invoke<{ domains: string[] }>("temp-mail-list-domains");
+  if (error) throw error;
+  return data?.domains ?? [];
+}
+
 export function subscribeToInbox(address: string, onNewMail: () => void) {
   const channel = supabase
     .channel(`inbox:${address}`)

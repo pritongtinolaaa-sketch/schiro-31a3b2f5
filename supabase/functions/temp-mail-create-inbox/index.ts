@@ -7,9 +7,30 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const DOMAINS = ["mailshed.dev", "inboxfwd.net", "tempbox.one", "tinola.eu.cc", "schiro.qzz.io", "schiro.dpdns.org", "schiro.store", "pritongtinola.store"] as const;
+const LOCAL_DOMAINS = [
+  "mailshed.dev",
+  "inboxfwd.net",
+  "tempbox.one",
+  "tinola.eu.cc",
+  "schiro.qzz.io",
+  "schiro.dpdns.org",
+  "schiro.indevs.in",
+] as const;
 
-type Domain = (typeof DOMAINS)[number];
+async function fetchMailTmDomains(): Promise<string[]> {
+  try {
+    const response = await fetch("https://api.mail.tm/domains?page=1", { method: "GET" });
+    if (!response.ok) return [];
+    const payload = await response.json();
+    const members = Array.isArray(payload?.["hydra:member"]) ? payload["hydra:member"] : [];
+    return members
+      .filter((item: any) => item?.isActive !== false && item?.isPrivate !== true)
+      .map((item: any) => String(item?.domain ?? "").trim())
+      .filter((value: string) => value.length > 0);
+  } catch {
+    return [];
+  }
+}
 
 function randomLocalPart() {
   const adjectives = ["quiet", "mint", "rapid", "paper", "neon", "civic", "lunar", "pixel", "soft", "delta"];
@@ -20,8 +41,11 @@ function randomLocalPart() {
   return `${a}.${n}${num}`;
 }
 
-function isAllowedDomain(input: unknown): input is Domain {
-  return typeof input === "string" && (DOMAINS as readonly string[]).includes(input);
+async function isAllowedDomain(input: unknown): Promise<input is string> {
+  if (typeof input !== "string") return false;
+  if ((LOCAL_DOMAINS as readonly string[]).includes(input)) return true;
+  const mailTmDomains = await fetchMailTmDomains();
+  return mailTmDomains.includes(input);
 }
 
 function base64Url(bytes: Uint8Array) {
@@ -62,13 +86,13 @@ Deno.serve(async (req) => {
       requesterUserId = data.user?.id ?? null;
     }
 
-    let chosenDomain: Domain | null = null;
+    let chosenDomain: string | null = null;
     let chosenLocalPart: string | null = null;
     let reclaimToken: string | null = null;
 
     try {
       const body = await req.json().catch(() => ({}));
-      if (isAllowedDomain(body?.domain)) chosenDomain = body.domain;
+      if (await isAllowedDomain(body?.domain)) chosenDomain = body.domain;
       if (typeof body?.localPart === "string") chosenLocalPart = body.localPart.trim() || null;
       if (typeof body?.reclaimToken === "string") reclaimToken = body.reclaimToken.trim() || null;
     } catch {
@@ -206,4 +230,3 @@ Deno.serve(async (req) => {
     });
   }
 });
-
