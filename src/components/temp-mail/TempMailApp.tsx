@@ -370,8 +370,7 @@ export default function TempMailApp() {
       toast.error("Couldn't sign out", { description: error.message });
       return;
     }
-    toast.success("Signed out");
-  };
+  const profileLabel = profileName ?? user?.email?.split("@")[0] ?? "Profile";
 
   return (
     <div className="min-h-screen">
