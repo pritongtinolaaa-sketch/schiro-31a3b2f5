@@ -885,12 +885,12 @@ export default function TempMailApp() {
           </Card>
 
           <Card className="md:col-span-7">
-            <div className="flex items-center justify-between gap-4 border-b p-4">
+            <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium">Message</div>
                 <div className="truncate text-xs text-muted-foreground text-mono">{address ?? "—"}</div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => void deleteActive()} disabled={!active}>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => void deleteActive()} disabled={!active}>
                 <Trash2 /> Delete
               </Button>
             </div>
