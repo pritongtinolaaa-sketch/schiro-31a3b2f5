@@ -128,6 +128,7 @@ export default function TempMailApp() {
       setSession(currentSession);
       const nextUser = currentSession?.user ?? null;
       setUser(nextUser);
+      setAuthReady(true);
       if (nextUser) {
         void loadProfile(nextUser.id);
       } else {
@@ -141,7 +142,10 @@ export default function TempMailApp() {
       setUser(nextUser);
       if (nextUser) {
         void loadProfile(nextUser.id);
+      } else {
+        setProfileName(null);
       }
+      setAuthReady(true);
     });
 
     return () => listener.subscription.unsubscribe();
