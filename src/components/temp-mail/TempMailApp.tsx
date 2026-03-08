@@ -720,7 +720,7 @@ export default function TempMailApp() {
                 <div className="rounded-lg border bg-background/60 p-3 text-xs text-muted-foreground">
                   Tip: Create an email first, then press “Receive” to deliver a real test message.
                 </div>
-                <Button asChild variant="outline" className="mt-2 w-full">
+                <Button asChild variant="hero" size="lg" className="mt-2 w-full text-sm font-semibold tracking-wide">
                   <a href="https://schiro.eu.cc" target="_blank" rel="noopener noreferrer">
                     Check out my other Netflix Cookie Checker site
                   </a>
