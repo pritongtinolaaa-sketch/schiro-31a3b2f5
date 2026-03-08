@@ -116,6 +116,11 @@ export async function clearInboxRemote(input: { address: string; token: string }
   if (error) throw error;
 }
 
+export async function deleteOwnedInbox(input: { address: string }) {
+  const { error } = await supabase.functions.invoke("temp-mail-delete-owned-inbox", { body: input });
+  if (error) throw error;
+}
+
 export async function listOwnedInboxes(): Promise<OwnedInbox[]> {
   const { data, error } = await supabase.functions.invoke<{ inboxes: OwnedInbox[] }>("temp-mail-list-owned-inboxes");
   if (error) throw error;
