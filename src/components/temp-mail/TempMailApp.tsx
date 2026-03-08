@@ -734,7 +734,7 @@ export default function TempMailApp() {
                         <div className="grid gap-2">
                           <Button asChild variant="hero" className="w-full justify-start">
                             <a href="https://schiro.eu.cc" target="_blank" rel="noopener noreferrer">
-                              Netflix Cookie Checker
+                              Schiro Cookie Checker - Netflix Checker
                             </a>
                           </Button>
                           <Button asChild variant="secondary" className="w-full justify-start">
