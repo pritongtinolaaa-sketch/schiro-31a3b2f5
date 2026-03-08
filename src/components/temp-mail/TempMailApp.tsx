@@ -85,11 +85,11 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-function domainFromAddress(address: string): Domain | null {
+function domainFromAddress(address: string, domains: readonly string[]): Domain | null {
   const at = address.lastIndexOf("@");
   if (at === -1) return null;
   const d = address.slice(at + 1);
-  return (DOMAINS as readonly string[]).includes(d) ? (d as Domain) : null;
+  return domains.includes(d) ? d : null;
 }
 
 export default function TempMailApp() {
