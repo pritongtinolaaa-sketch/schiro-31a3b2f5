@@ -305,6 +305,7 @@ export default function TempMailApp() {
       saveInbox(created);
       setLocalPart("");
       toast.success("Email created", { description: created.address });
+      if (user) await refreshOwnedInboxes();
     } catch (e: any) {
       toast.error("Couldn't create email", { description: e?.message ?? "Please try again." });
     } finally {
