@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 const LOCAL_DOMAINS = [
+  "dollicons.com",
   "mailshed.dev",
   "inboxfwd.net",
   "tempbox.one",
