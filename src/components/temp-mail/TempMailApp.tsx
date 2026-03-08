@@ -180,6 +180,17 @@ export default function TempMailApp() {
     return () => el.removeEventListener("pointermove", onMove);
   }, [prefersReducedMotion]);
 
+  const loadAvailableDomains = useCallback(async () => {
+    try {
+      const domains = await listAvailableDomains();
+      if (domains.length > 0) {
+        setAvailableDomains(domains);
+      }
+    } catch {
+      // fallback domains stay in place
+    }
+  }, []);
+
   const loadProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle();
     if (error) {
