@@ -583,11 +583,24 @@ export default function TempMailApp() {
                 <div className="text-sm text-muted-foreground">No claimed addresses yet.</div>
               ) : (
                 <ul className="space-y-2">
-                  {ownedInboxes.map((inbox) => (
-                    <li key={inbox.address} className="rounded-lg border bg-surface-2 px-3 py-2">
-                      <div className="text-sm text-mono">{inbox.address}</div>
-                    </li>
-                  ))}
+                  {ownedInboxes.map((inbox) => {
+                    const selected = address === inbox.address;
+                    return (
+                      <li key={inbox.address}>
+                        <button
+                          type="button"
+                          onClick={() => void openClaimedInbox(inbox.address)}
+                          disabled={loadingInbox}
+                          className={cn(
+                            "w-full rounded-lg border px-3 py-2 text-left transition-colors",
+                            selected ? "bg-accent/10" : "bg-surface-2 hover:bg-muted/50",
+                          )}
+                        >
+                          <div className="text-sm text-mono">{inbox.address}</div>
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
