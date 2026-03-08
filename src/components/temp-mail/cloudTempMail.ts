@@ -24,6 +24,7 @@ export type OwnedInbox = {
   address: string;
   createdAt: string;
   expiresAt: string;
+  latestReceivedAt: string | null;
 };
 
 const STORAGE_KEY = "temp_mail_inbox_v1";
@@ -112,6 +113,11 @@ export async function deleteMessage(input: { address: string; token: string; mes
 
 export async function clearInboxRemote(input: { address: string; token: string }) {
   const { error } = await supabase.functions.invoke("temp-mail-clear-inbox", { body: input });
+  if (error) throw error;
+}
+
+export async function deleteOwnedInbox(input: { address: string }) {
+  const { error } = await supabase.functions.invoke("temp-mail-delete-owned-inbox", { body: input });
   if (error) throw error;
 }
 

@@ -18,6 +18,7 @@ import {
   clearSavedInbox,
   createInbox,
   deleteMessage,
+  deleteOwnedInbox,
   listMessages,
   listOwnedInboxes,
   loadSavedInbox,
@@ -30,6 +31,24 @@ import {
 } from "./cloudTempMail";
 
 const DOMAINS = getTempMailDomains();
+const CLAIMED_INBOX_SEEN_KEY = "temp_mail_claimed_seen_v1";
+
+type ClaimedSeenMap = Record<string, number>;
+
+function readClaimedSeenMap(): ClaimedSeenMap {
+  try {
+    const raw = localStorage.getItem(CLAIMED_INBOX_SEEN_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as ClaimedSeenMap;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeClaimedSeenMap(map: ClaimedSeenMap) {
+  localStorage.setItem(CLAIMED_INBOX_SEEN_KEY, JSON.stringify(map));
+}
 
 function formatTime(ts: number) {
   const d = new Date(ts);
@@ -91,6 +110,8 @@ export default function TempMailApp() {
   const [authLoading, setAuthLoading] = useState(false);
   const [ownedInboxes, setOwnedInboxes] = useState<OwnedInbox[]>([]);
   const [loadingOwnedInboxes, setLoadingOwnedInboxes] = useState(false);
+  const [claimedSeenMap, setClaimedSeenMap] = useState<ClaimedSeenMap>({});
+  const [deletingOwnedAddress, setDeletingOwnedAddress] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeId && emails[0]?.id) setActiveId(emails[0].id);
@@ -100,6 +121,10 @@ export default function TempMailApp() {
 
   const heroRef = useRef<HTMLDivElement | null>(null);
   const creatingGuestInboxRef = useRef(false);
+
+  useEffect(() => {
+    setClaimedSeenMap(readClaimedSeenMap());
+  }, []);
 
   useEffect(() => {
     if (prefersReducedMotion) return;
@@ -164,6 +189,14 @@ export default function TempMailApp() {
       const res = await listMessages({ address, token });
       setEmails(res.messages);
       setExpiresAt(res.expiresAt);
+
+      const latestSeenTs = res.messages[0]?.receivedAt ?? Date.now();
+      setClaimedSeenMap((prev) => {
+        if ((prev[address] ?? 0) >= latestSeenTs) return prev;
+        const next = { ...prev, [address]: latestSeenTs };
+        writeClaimedSeenMap(next);
+        return next;
+      });
     } catch (e: any) {
       toast.error("Couldn't load inbox", { description: e?.message ?? "Please try again." });
     } finally {
@@ -188,8 +221,8 @@ export default function TempMailApp() {
     }
   }, [user]);
 
-  const openClaimedInbox = async (claimedAddress: string) => {
-    const [claimedLocalPart, claimedDomain] = claimedAddress.split("@");
+  const openClaimedInbox = async (claimedInbox: OwnedInbox) => {
+    const [claimedLocalPart, claimedDomain] = claimedInbox.address.split("@");
     if (!claimedLocalPart || !claimedDomain || !(DOMAINS as readonly string[]).includes(claimedDomain)) {
       toast.error("Invalid claimed address", { description: "That address can't be opened." });
       return;
@@ -207,11 +240,50 @@ export default function TempMailApp() {
       setEmails(res.messages);
       setExpiresAt(res.expiresAt);
       setActiveId(res.messages[0]?.id ?? null);
+
+      const seenTs = claimedInbox.latestReceivedAt ? Date.parse(claimedInbox.latestReceivedAt) : Date.now();
+      setClaimedSeenMap((prev) => {
+        const next = { ...prev, [created.address]: seenTs };
+        writeClaimedSeenMap(next);
+        return next;
+      });
+
       toast.success("Claimed inbox opened", { description: created.address });
     } catch (e: any) {
       toast.error("Couldn't open claimed inbox", { description: e?.message ?? "Please try again." });
     } finally {
       setLoadingInbox(false);
+    }
+  };
+
+  const handleDeleteOwnedInbox = async (claimedAddress: string) => {
+    setDeletingOwnedAddress(claimedAddress);
+    try {
+      await deleteOwnedInbox({ address: claimedAddress });
+
+      if (address === claimedAddress) {
+        clearSavedInbox();
+        setAddress(null);
+        setToken(null);
+        setExpiresAt(null);
+        setEmails([]);
+        setActiveId(null);
+      }
+
+      setClaimedSeenMap((prev) => {
+        if (!(claimedAddress in prev)) return prev;
+        const next = { ...prev };
+        delete next[claimedAddress];
+        writeClaimedSeenMap(next);
+        return next;
+      });
+
+      await refreshOwnedInboxes();
+      toast.success("Claimed address deleted", { description: claimedAddress });
+    } catch (e: any) {
+      toast.error("Couldn't delete claimed address", { description: e?.message ?? "Please try again." });
+    } finally {
+      setDeletingOwnedAddress(null);
     }
   };
 
@@ -587,19 +659,39 @@ export default function TempMailApp() {
                 <ul className="space-y-2">
                   {ownedInboxes.map((inbox) => {
                     const selected = address === inbox.address;
+                    const latestReceivedAtTs = inbox.latestReceivedAt ? Date.parse(inbox.latestReceivedAt) : 0;
+                    const seenTs = claimedSeenMap[inbox.address] ?? 0;
+                    const hasUnread = latestReceivedAtTs > seenTs;
+
                     return (
-                      <li key={inbox.address}>
+                      <li key={inbox.address} className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => void openClaimedInbox(inbox.address)}
-                          disabled={loadingInbox}
+                          onClick={() => void openClaimedInbox(inbox)}
+                          disabled={loadingInbox || deletingOwnedAddress === inbox.address}
                           className={cn(
-                            "w-full rounded-lg border px-3 py-2 text-left transition-colors",
+                            "flex-1 rounded-lg border px-3 py-2 text-left transition-colors",
                             selected ? "bg-accent/10" : "bg-surface-2 hover:bg-muted/50",
                           )}
                         >
-                          <div className="text-sm text-mono">{inbox.address}</div>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-sm text-mono">{inbox.address}</div>
+                            {hasUnread ? (
+                              <span className="inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium">Unread</span>
+                            ) : null}
+                          </div>
                         </button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          disabled={deletingOwnedAddress === inbox.address}
+                          onClick={() => void handleDeleteOwnedInbox(inbox.address)}
+                          aria-label={`Delete ${inbox.address}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </li>
                     );
                   })}

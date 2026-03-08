@@ -11,6 +11,14 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const { address } = await req.json();
+    if (!address) {
+      return new Response(JSON.stringify({ error: "Missing address" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -40,44 +48,32 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { data, error } = await supabase
+    const { data: inbox, error: inboxError } = await supabase
       .from("temp_mail_inboxes")
-      .select("id, email_address, created_at, expires_at")
+      .select("id")
+      .eq("email_address", String(address))
       .eq("owner_profile_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(200);
+      .maybeSingle();
 
-    if (error) throw error;
-
-    const inboxRows = data ?? [];
-    const inboxIds = inboxRows.map((row) => row.id);
-    const latestByInboxId: Record<string, string> = {};
-
-    if (inboxIds.length > 0) {
-      const { data: messageRows, error: messageError } = await supabase
-        .from("temp_mail_messages")
-        .select("inbox_id, received_at")
-        .in("inbox_id", inboxIds)
-        .order("received_at", { ascending: false })
-        .limit(1000);
-
-      if (messageError) throw messageError;
-
-      for (const message of messageRows ?? []) {
-        if (!latestByInboxId[message.inbox_id]) {
-          latestByInboxId[message.inbox_id] = message.received_at;
-        }
-      }
+    if (inboxError) throw inboxError;
+    if (!inbox) {
+      return new Response(JSON.stringify({ error: "Inbox not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const inboxes = inboxRows.map((row) => ({
-      address: row.email_address,
-      createdAt: row.created_at,
-      expiresAt: row.expires_at,
-      latestReceivedAt: latestByInboxId[row.id] ?? null,
-    }));
+    const { error: deleteMessagesError } = await supabase
+      .from("temp_mail_messages")
+      .delete()
+      .eq("inbox_id", inbox.id);
 
-    return new Response(JSON.stringify({ inboxes }), {
+    if (deleteMessagesError) throw deleteMessagesError;
+
+    const { error: deleteInboxError } = await supabase.from("temp_mail_inboxes").delete().eq("id", inbox.id);
+    if (deleteInboxError) throw deleteInboxError;
+
+    return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
