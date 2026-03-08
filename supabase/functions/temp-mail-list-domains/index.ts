@@ -16,6 +16,8 @@ const LOCAL_DOMAINS = [
   "dollicons.com",
 ] as const;
 
+const CATCHMAIL_DOMAINS = ["catchmail.io", "mailistry.com", "zeppost.com"] as const;
+
 const BLOCKED_DOMAINS = new Set<string>([
   "mailshed.dev",
   "inboxfwd.net",
@@ -104,15 +106,20 @@ Deno.serve(async (req) => {
     ]);
 
     const localSet = new Set<string>(LOCAL_DOMAINS.map((d) => d.toLowerCase()));
+    const catchmailSet = new Set<string>(CATCHMAIL_DOMAINS.map((d) => d.toLowerCase()));
     const ownedSet = new Set<string>(ownedDomains);
 
     const localOnly = LOCAL_DOMAINS.filter((d) => !ownedSet.has(d.toLowerCase()));
 
+    const catchmailOnly = CATCHMAIL_DOMAINS.filter(
+      (domain) => !ownedSet.has(domain.toLowerCase()) && !localSet.has(domain.toLowerCase()) && !BLOCKED_DOMAINS.has(domain.toLowerCase()),
+    );
+
     const externalOnly = Array.from(new Set(external))
-      .filter((domain) => !localSet.has(domain) && !ownedSet.has(domain) && !BLOCKED_DOMAINS.has(domain))
+      .filter((domain) => !localSet.has(domain) && !catchmailSet.has(domain) && !ownedSet.has(domain) && !BLOCKED_DOMAINS.has(domain))
       .sort((a, b) => a.localeCompare(b));
 
-    const domains = [...ownedDomains, ...localOnly, ...externalOnly];
+    const domains = [...ownedDomains, ...localOnly, ...catchmailOnly, ...externalOnly];
 
     return new Response(JSON.stringify({ domains }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

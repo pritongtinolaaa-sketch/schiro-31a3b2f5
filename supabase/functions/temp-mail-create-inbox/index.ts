@@ -16,6 +16,8 @@ const LOCAL_DOMAINS = [
   "dollicons.com",
 ] as const;
 
+const CATCHMAIL_DOMAINS = ["catchmail.io", "mailistry.com", "zeppost.com"] as const;
+
 const BLOCKED_DOMAINS = new Set<string>([
   "mailshed.dev",
   "inboxfwd.net",
@@ -68,7 +70,7 @@ async function isAllowedDomain(input: unknown, supabase: any, requesterUserId: s
   if (!domain) return false;
   if (BLOCKED_DOMAINS.has(domain)) return false;
 
-  if ((LOCAL_DOMAINS as readonly string[]).includes(domain)) return true;
+  if ((LOCAL_DOMAINS as readonly string[]).includes(domain) || (CATCHMAIL_DOMAINS as readonly string[]).includes(domain)) return true;
 
   const [mailTmDomains, owned] = await Promise.all([
     fetchMailTmDomains(),

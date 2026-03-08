@@ -7,6 +7,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const CATCHMAIL_DOMAINS = new Set(["catchmail.io", "mailistry.com", "zeppost.com"]);
+
 function base64Url(bytes: Uint8Array) {
   const str = btoa(String.fromCharCode(...bytes));
   return str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
@@ -16,6 +18,25 @@ async function sha256Base64Url(input: string) {
   const data = new TextEncoder().encode(input);
   const digest = await crypto.subtle.digest("SHA-256", data);
   return base64Url(new Uint8Array(digest));
+}
+
+function domainFromAddress(address: string): string {
+  const at = address.lastIndexOf("@");
+  return at === -1 ? "" : address.slice(at + 1).trim().toLowerCase();
+}
+
+function isCatchmailAddress(address: string) {
+  return CATCHMAIL_DOMAINS.has(domainFromAddress(address));
+}
+
+async function deleteCatchmailMessage(address: string, messageId: string) {
+  const url = `https://api.catchmail.io/api/v1/message/${encodeURIComponent(messageId)}?mailbox=${encodeURIComponent(address)}`;
+  const response = await fetch(url, { method: "DELETE" });
+
+  if (!response.ok && response.status !== 204) {
+    const details = await response.text().catch(() => "");
+    throw new Error(`CatchMail delete failed (${response.status}): ${details || "unknown error"}`);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -58,13 +79,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { error: delError } = await supabase
-      .from("temp_mail_messages")
-      .delete()
-      .eq("id", String(messageId))
-      .eq("inbox_id", inbox.id);
+    if (isCatchmailAddress(String(address))) {
+      await deleteCatchmailMessage(String(address), String(messageId));
+    } else {
+      const { error: delError } = await supabase
+        .from("temp_mail_messages")
+        .delete()
+        .eq("id", String(messageId))
+        .eq("inbox_id", inbox.id);
 
-    if (delError) throw delError;
+      if (delError) throw delError;
+    }
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

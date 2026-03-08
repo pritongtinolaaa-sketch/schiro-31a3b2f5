@@ -33,6 +33,17 @@ async function broadcastNewMail(opts: { supabaseUrl: string; serviceKey: string;
   });
 }
 
+const CATCHMAIL_DOMAINS = new Set(["catchmail.io", "mailistry.com", "zeppost.com"]);
+
+function domainFromAddress(address: string): string {
+  const at = address.lastIndexOf("@");
+  return at === -1 ? "" : address.slice(at + 1).trim().toLowerCase();
+}
+
+function isCatchmailAddress(address: string) {
+  return CATCHMAIL_DOMAINS.has(domainFromAddress(address));
+}
+
 function makeDemoEmail() {
   const senders = [
     "no-reply@streamvault.app",
@@ -84,6 +95,13 @@ Deno.serve(async (req) => {
     if (new Date(inbox.expires_at).getTime() <= Date.now()) {
       return new Response(JSON.stringify({ error: "Inbox expired" }), {
         status: 410,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (isCatchmailAddress(String(address))) {
+      return new Response(JSON.stringify({ error: "Send test is only available for built-in domains. Send a real email to this CatchMail address to test delivery." }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
