@@ -20,10 +20,6 @@ function randomLocalPart() {
   return `${a}.${n}${num}`;
 }
 
-function randomDomain(): Domain {
-  return DOMAINS[Math.floor(Math.random() * DOMAINS.length)];
-}
-
 function isAllowedDomain(input: unknown): input is Domain {
   return typeof input === "string" && (DOMAINS as readonly string[]).includes(input);
 }
