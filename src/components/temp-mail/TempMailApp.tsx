@@ -183,7 +183,7 @@ export default function TempMailApp() {
   };
 
   useEffect(() => {
-    if (!authReady || user || address || creatingGuestInboxRef.current) return;
+    if (!authReady || loadingInbox || user || address || creatingGuestInboxRef.current) return;
 
     const domain = selectedDomain ?? DOMAINS[0];
     if (!selectedDomain) setSelectedDomain(domain);
