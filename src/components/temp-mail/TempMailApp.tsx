@@ -680,7 +680,7 @@ export default function TempMailApp() {
         <div className="pointer-events-none absolute inset-0 opacity-70" />
         <div className="container max-w-6xl relative py-8 md:py-10">
           <div className="grid gap-6 md:grid-cols-12 md:items-start">
-            <div className="md:col-span-7">
+            <div className="md:col-span-7 relative md:pb-16">
               <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow-elev">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Real inbox • persisted • realtime updates</span>
@@ -715,7 +715,7 @@ export default function TempMailApp() {
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-center">
+              <div className="mt-8 flex justify-center md:absolute md:bottom-2 md:left-1/2 md:mt-0 md:-translate-x-1/2">
                 <Button variant="outline" onClick={scrollToInbox}>
                   Go to inbox ↓
                 </Button>
