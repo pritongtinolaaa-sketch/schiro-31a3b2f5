@@ -348,6 +348,7 @@ export default function TempMailApp() {
           options: {
             data: {
               display_name: authDisplayName || undefined,
+              username: authDisplayName || undefined,
             },
             emailRedirectTo: window.location.origin,
           },
@@ -388,7 +389,9 @@ export default function TempMailApp() {
   };
 
   const isLoggedIn = Boolean(session);
-  const profileLabel = profileName ?? user?.email?.split("@")[0] ?? "Profile";
+  const profileLabel =
+    profileName ??
+    String(user?.user_metadata?.username ?? user?.user_metadata?.display_name ?? user?.email?.split("@")[0] ?? "Profile");
 
   return (
     <div className="min-h-screen">
@@ -402,8 +405,8 @@ export default function TempMailApp() {
           </div>
 
           {isLoggedIn ? (
-            <div className="flex items-center gap-2">
-              <Button variant="glass" size="sm">{profileLabel}</Button>
+            <div className="flex items-center gap-3">
+              <span className="max-w-[180px] truncate text-sm text-muted-foreground">{profileLabel}</span>
               <Button variant="outline" size="sm" onClick={() => void handleSignOut()}>
                 Sign out
               </Button>
@@ -614,10 +617,11 @@ export default function TempMailApp() {
 
             {authMode === "signup" ? (
               <Input
-                placeholder="Display name"
+                placeholder="Username"
                 value={authDisplayName}
                 onChange={(e) => setAuthDisplayName(e.target.value)}
                 disabled={authLoading}
+                required
               />
             ) : null}
 
