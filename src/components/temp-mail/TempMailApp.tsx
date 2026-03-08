@@ -663,8 +663,8 @@ export default function TempMailApp() {
           </div>
 
           {isLoggedIn ? (
-            <div className="flex items-center gap-3">
-              <span className="max-w-[180px] truncate text-sm text-muted-foreground">{profileLabel}</span>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="max-w-[120px] truncate text-sm text-muted-foreground sm:max-w-[180px]">{profileLabel}</span>
               <Button variant="outline" size="sm" onClick={() => void handleSignOut()}>
                 Sign out
               </Button>
@@ -756,7 +756,7 @@ export default function TempMailApp() {
                 <div className="text-sm text-muted-foreground">No claimed addresses yet.</div>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <Select
                       value={selectedClaimedInbox.address}
                       onValueChange={(value) => void handleClaimedAddressSelect(value)}
@@ -778,28 +778,30 @@ export default function TempMailApp() {
                         })}
                       </SelectContent>
                     </Select>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0"
-                      disabled={deletingOwnedAddress === selectedClaimedInbox.address}
-                      onClick={() => void copyClaimedAddress(selectedClaimedInbox.address)}
-                      aria-label={`Copy ${selectedClaimedInbox.address}`}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0"
-                      disabled={deletingOwnedAddress === selectedClaimedInbox.address}
-                      onClick={() => void handleDeleteOwnedInbox(selectedClaimedInbox.address)}
-                      aria-label={`Delete ${selectedClaimedInbox.address}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0"
+                        disabled={deletingOwnedAddress === selectedClaimedInbox.address}
+                        onClick={() => void copyClaimedAddress(selectedClaimedInbox.address)}
+                        aria-label={`Copy ${selectedClaimedInbox.address}`}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0"
+                        disabled={deletingOwnedAddress === selectedClaimedInbox.address}
+                        onClick={() => void handleDeleteOwnedInbox(selectedClaimedInbox.address)}
+                        aria-label={`Delete ${selectedClaimedInbox.address}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -809,22 +811,34 @@ export default function TempMailApp() {
 
         <section ref={inboxSectionRef} className="grid gap-3 md:grid-cols-12">
           <Card className="md:col-span-5">
-            <div className="flex items-center justify-between gap-4 border-b p-4">
+            <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="text-sm font-medium">Inbox</div>
                 <div className="text-xs text-muted-foreground">{emails.length} message(s)</div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="secondary" size="sm" onClick={receiveTestEmail} disabled={loadingInbox || !address}>
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1 sm:flex-none"
+                  onClick={receiveTestEmail}
+                  disabled={loadingInbox || !address}
+                >
                   <Inbox /> Receive
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => void refreshMessages()} disabled={loadingMessages || !address}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 sm:flex-none"
+                  onClick={() => void refreshMessages()}
+                  disabled={loadingMessages || !address}
+                >
                   Refresh
                 </Button>
               </div>
             </div>
 
-            <div className="max-h-[460px] overflow-auto">
+            <div className="max-h-[52vh] overflow-auto md:max-h-[460px]">
               {emails.length === 0 ? (
                 <div className="p-6">
                   <div className="rounded-xl border bg-surface-2 p-5 shadow-sm">
@@ -871,12 +885,12 @@ export default function TempMailApp() {
           </Card>
 
           <Card className="md:col-span-7">
-            <div className="flex items-center justify-between gap-4 border-b p-4">
+            <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium">Message</div>
                 <div className="truncate text-xs text-muted-foreground text-mono">{address ?? "—"}</div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => void deleteActive()} disabled={!active}>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => void deleteActive()} disabled={!active}>
                 <Trash2 /> Delete
               </Button>
             </div>
