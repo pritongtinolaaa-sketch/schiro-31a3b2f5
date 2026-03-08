@@ -37,6 +37,7 @@ const DEFAULT_DOMAINS: Domain[] = [
   "schiro.qzz.io",
   "schiro.dpdns.org",
   "schiro.indevs.in",
+  "schiromail.indevs.in",
   "dollicons.com",
 ];
 const CLAIMED_INBOX_SEEN_KEY = "temp_mail_claimed_seen_v1";
