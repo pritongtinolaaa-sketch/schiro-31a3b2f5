@@ -69,30 +69,26 @@ function repairMojibakeUtf8(input: string) {
 
 function readabilityScore(input: string) {
   if (!input) return 0;
+
   let readable = 0;
-  let unreadable = 0;
+  let hardBad = 0;
 
   for (const ch of input) {
     const code = ch.charCodeAt(0);
-    const isPrintableAscii = code >= 32 && code <= 126;
-    const isWhitespace = ch === "\n" || ch === "\r" || ch === "\t";
-    const isCommonUnicode = code >= 0xa0 && ch !== "�";
-    const isControl = code < 32 && !isWhitespace;
 
-    if (isControl || code === 127 || ch === "�") {
-      unreadable += 1;
+    if (ch === "�" || (code < 32 && ch !== "\n" && ch !== "\r" && ch !== "\t") || code === 127) {
+      hardBad += 1;
       continue;
     }
 
-    if (isPrintableAscii || isWhitespace || isCommonUnicode) {
-      readable += 1;
-    } else {
-      unreadable += 1;
-    }
+    const isLikelyText = /[\p{L}\p{N}\p{P}\p{Zs}\n\r\t]/u.test(ch);
+    if (isLikelyText) readable += 1;
   }
 
-  const total = readable + unreadable;
-  return total > 0 ? readable / total : 0;
+  const total = input.length;
+  if (total === 0) return 0;
+  if (hardBad / total > 0.08) return 0;
+  return readable / total;
 }
 
 function pickBestReadable(candidates: string[], minScore = 0.6) {
@@ -116,11 +112,20 @@ function decodeBase64(input: string): string | null {
     const binary = atob(padded);
     const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
 
-    const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(bytes).trim();
-    const latin1 = binary.trim();
-    const repaired = repairMojibakeUtf8(latin1).trim();
+    let strictUtf8: string | null = null;
+    try {
+      strictUtf8 = new TextDecoder("utf-8", { fatal: true }).decode(bytes).trim();
+    } catch {
+      strictUtf8 = null;
+    }
 
-    return pickBestReadable([utf8, repaired, latin1], 0.45);
+    if (strictUtf8 && readabilityScore(strictUtf8) >= 0.62) return strictUtf8;
+
+    const utf8Relaxed = new TextDecoder("utf-8", { fatal: false }).decode(bytes).trim();
+    const repaired = repairMojibakeUtf8(binary).trim();
+
+    const best = pickBestReadable([utf8Relaxed, repaired], 0.72);
+    return best;
   } catch {
     return null;
   }
