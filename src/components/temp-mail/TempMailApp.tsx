@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { Copy, Inbox, Mail, Shield, Sparkles, Trash2 } from "lucide-react";
 
+import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -364,6 +365,19 @@ export default function TempMailApp() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setAuthLoading(true);
+    try {
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (error) throw error;
+    } catch (e: any) {
+      toast.error("Google sign-in failed", { description: e?.message ?? "Please try again." });
+      setAuthLoading(false);
+    }
+  };
+
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -590,6 +604,14 @@ export default function TempMailApp() {
               void handleAuthSubmit();
             }}
           >
+            {authMode === "login" ? (
+              <Button type="button" variant="outline" onClick={() => void handleGoogleSignIn()} disabled={authLoading}>
+                Continue with Google
+              </Button>
+            ) : null}
+
+            {authMode === "login" ? <div className="text-center text-xs text-muted-foreground">or use email</div> : null}
+
             {authMode === "signup" ? (
               <Input
                 placeholder="Display name"
