@@ -16,6 +16,8 @@ const LOCAL_DOMAINS = [
   "dollicons.com",
 ] as const;
 
+const CATCHMAIL_DOMAINS = ["catchmail.io", "mailistry.com", "zeppost.com"] as const;
+
 const BLOCKED_DOMAINS = new Set<string>([
   "mailshed.dev",
   "inboxfwd.net",
