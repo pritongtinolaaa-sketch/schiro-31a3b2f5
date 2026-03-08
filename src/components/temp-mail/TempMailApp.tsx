@@ -111,6 +111,7 @@ export default function TempMailApp() {
   const [authLoading, setAuthLoading] = useState(false);
   const [ownedInboxes, setOwnedInboxes] = useState<OwnedInbox[]>([]);
   const [loadingOwnedInboxes, setLoadingOwnedInboxes] = useState(false);
+  const [selectedClaimedAddress, setSelectedClaimedAddress] = useState<string | null>(null);
   const [claimedSeenMap, setClaimedSeenMap] = useState<ClaimedSeenMap>({});
   const [deletingOwnedAddress, setDeletingOwnedAddress] = useState<string | null>(null);
 
