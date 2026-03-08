@@ -5,7 +5,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const LOCAL_DOMAINS: readonly string[] = [];
+const LOCAL_DOMAINS = [
+  "tinola.eu.cc",
+  "schiro.qzz.io",
+  "schiro.dpdns.org",
+  "schiro.indevs.in",
+  "mailshed.dev",
+  "inboxfwd.net",
+  "tempbox.one",
+] as const;
 
 type MailTmDomain = {
   domain?: string;
