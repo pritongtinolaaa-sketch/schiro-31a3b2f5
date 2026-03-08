@@ -485,6 +485,7 @@ export default function TempMailApp() {
       setExpiresAt(created.expiresAt);
       saveInbox(created);
       setLocalPart("");
+      if (user) setSelectedClaimedAddress(created.address);
       toast.success("Email created", { description: created.address });
       if (user) await refreshOwnedInboxes();
     } catch (e: any) {
