@@ -31,6 +31,24 @@ import {
 } from "./cloudTempMail";
 
 const DOMAINS = getTempMailDomains();
+const CLAIMED_INBOX_SEEN_KEY = "temp_mail_claimed_seen_v1";
+
+type ClaimedSeenMap = Record<string, number>;
+
+function readClaimedSeenMap(): ClaimedSeenMap {
+  try {
+    const raw = localStorage.getItem(CLAIMED_INBOX_SEEN_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as ClaimedSeenMap;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeClaimedSeenMap(map: ClaimedSeenMap) {
+  localStorage.setItem(CLAIMED_INBOX_SEEN_KEY, JSON.stringify(map));
+}
 
 function formatTime(ts: number) {
   const d = new Date(ts);
