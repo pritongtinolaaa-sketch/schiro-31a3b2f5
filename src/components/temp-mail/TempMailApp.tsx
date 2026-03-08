@@ -326,6 +326,7 @@ export default function TempMailApp() {
       setEmails([]);
       setActiveId(null);
       toast("New inbox generated", { description: "Your previous inbox was cleared." });
+      if (user) await refreshOwnedInboxes();
     } catch (e: any) {
       toast.error("Couldn't generate inbox", { description: e?.message ?? "Please try again." });
     } finally {
