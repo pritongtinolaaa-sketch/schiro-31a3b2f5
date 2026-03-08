@@ -87,7 +87,10 @@ function decodeBodyForDisplay(input: string) {
 
   const decodeBase64Utf8 = (value: string) => {
     try {
-      const binary = atob(value.replace(/\s+/g, ""));
+      let compact = value.replace(/[^A-Za-z0-9+/=_-]/g, "");
+      compact = compact.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = compact.padEnd(Math.ceil(compact.length / 4) * 4, "=");
+      const binary = atob(padded);
       const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
       return new TextDecoder().decode(bytes);
     } catch {
@@ -112,13 +115,13 @@ function decodeBodyForDisplay(input: string) {
       .replace(/\n{3,}/g, "\n\n")
       .trim();
 
-  const mimeBase64 = raw.match(/Content-Transfer-Encoding:\s*base64[\s\S]*?\n\n([A-Za-z0-9+/=\n\r]+)(?:\n--|$)/i)?.[1];
+  const mimeBase64 = raw.match(/Content-Transfer-Encoding:\s*base64[\s\S]*?\n\n([A-Za-z0-9+/=_\-\n\r]+)(?:\n--|$)/i)?.[1];
   const candidate = mimeBase64 ?? raw;
-  const compact = candidate.replace(/\s+/g, "");
+  const compact = candidate.replace(/[^A-Za-z0-9+/=_-]/g, "");
 
-  if (compact.length > 80 && /^[A-Za-z0-9+/=]+$/.test(compact)) {
+  if (compact.length > 80) {
     const decoded = decodeBase64Utf8(compact);
-    if (decoded !== compact) {
+    if (decoded !== compact && decoded !== candidate) {
       if (/<[^>]+>/.test(decoded)) {
         const text = toText(decoded);
         if (text) return text;
