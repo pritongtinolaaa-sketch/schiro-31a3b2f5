@@ -171,6 +171,23 @@ export default function TempMailApp() {
     }
   }, [address, token]);
 
+  const refreshOwnedInboxes = useCallback(async () => {
+    if (!user) {
+      setOwnedInboxes([]);
+      return;
+    }
+
+    setLoadingOwnedInboxes(true);
+    try {
+      const inboxes = await listOwnedInboxes();
+      setOwnedInboxes(inboxes);
+    } catch (e: any) {
+      toast.error("Couldn't load claimed emails", { description: e?.message ?? "Please try again." });
+    } finally {
+      setLoadingOwnedInboxes(false);
+    }
+  }, [user]);
+
   const ensureInbox = async () => {
     setLoadingInbox(true);
     try {
