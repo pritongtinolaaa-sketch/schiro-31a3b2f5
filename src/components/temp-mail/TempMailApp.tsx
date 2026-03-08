@@ -370,23 +370,44 @@ export default function TempMailApp() {
       toast.error("Couldn't sign out", { description: error.message });
       return;
     }
+    toast.success("Signed out");
+  };
+
+  const isLoggedIn = Boolean(session);
   const profileLabel = profileName ?? user?.email?.split("@")[0] ?? "Profile";
 
   return (
     <div className="min-h-screen">
+      <nav className="sticky top-0 z-50 border-b bg-background/85 backdrop-blur-md">
+        <div className="container flex h-14 items-center justify-between">
+          <div className="inline-flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <Mail className="h-4 w-4" />
+            </span>
+            <span className="text-sm font-semibold tracking-wide">schiromail</span>
+          </div>
+
+          {isLoggedIn ? (
+            <div className="flex items-center gap-2">
+              <Button variant="glass" size="sm">{profileLabel}</Button>
+              <Button variant="outline" size="sm" onClick={() => void handleSignOut()}>
+                Sign out
+              </Button>
+            </div>
+          ) : (
+            <Button variant="hero" size="sm" onClick={() => setIsAuthDialogOpen(true)}>
+              Login
+            </Button>
+          )}
+        </div>
+      </nav>
+
       <header ref={heroRef} className="relative overflow-hidden border-b bg-hero">
         <div className="pointer-events-none absolute inset-0 opacity-70" />
         <div className="container relative py-10 md:py-14">
           <div className="grid gap-8 md:grid-cols-12 md:items-start">
             <div className="md:col-span-7">
-              <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1.5 shadow-elev">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                  <Mail className="h-3.5 w-3.5" />
-                </span>
-                <span className="text-sm font-semibold tracking-wide">schiromail</span>
-              </div>
-
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow-elev">
+              <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow-elev">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Real inbox • persisted • realtime updates</span>
               </div>
@@ -550,6 +571,65 @@ export default function TempMailApp() {
           </p>
         </footer>
       </main>
+
+      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{authMode === "login" ? "Login" : "Create account"}</DialogTitle>
+            <DialogDescription>
+              {authMode === "login"
+                ? "Sign in to access your account."
+                : "Create your account. Email verification is required before login."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            className="grid gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleAuthSubmit();
+            }}
+          >
+            {authMode === "signup" ? (
+              <Input
+                placeholder="Display name"
+                value={authDisplayName}
+                onChange={(e) => setAuthDisplayName(e.target.value)}
+                disabled={authLoading}
+              />
+            ) : null}
+
+            <Input
+              type="email"
+              placeholder="you@example.com"
+              value={authEmail}
+              onChange={(e) => setAuthEmail(e.target.value)}
+              disabled={authLoading}
+              required
+            />
+            <Input
+              type="password"
+              placeholder="Password"
+              value={authPassword}
+              onChange={(e) => setAuthPassword(e.target.value)}
+              disabled={authLoading}
+              required
+            />
+
+            <Button type="submit" variant="hero" disabled={authLoading}>
+              {authLoading ? "Please wait..." : authMode === "login" ? "Login" : "Create account"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setAuthMode((m) => (m === "login" ? "signup" : "login"))}
+              disabled={authLoading}
+            >
+              {authMode === "login" ? "Need an account? Sign up" : "Already have an account? Login"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
