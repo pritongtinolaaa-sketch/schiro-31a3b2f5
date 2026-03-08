@@ -591,6 +591,14 @@ export default function TempMailApp() {
               void handleAuthSubmit();
             }}
           >
+            {authMode === "login" ? (
+              <Button type="button" variant="outline" onClick={() => void handleGoogleSignIn()} disabled={authLoading}>
+                Continue with Google
+              </Button>
+            ) : null}
+
+            {authMode === "login" ? <div className="text-center text-xs text-muted-foreground">or use email</div> : null}
+
             {authMode === "signup" ? (
               <Input
                 placeholder="Display name"
