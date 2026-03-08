@@ -44,6 +44,7 @@ const DEFAULT_DOMAINS: Domain[] = [
 ];
 const CLAIMED_INBOX_SEEN_KEY = "temp_mail_claimed_seen_v1";
 const AUTO_REFRESH_SECONDS = 15;
+const OWNER_USER_ID = "fD11RMWDuvYFY2I0yBSTKXUj4d23";
 
 type ClaimedSeenMap = Record<string, number>;
 
