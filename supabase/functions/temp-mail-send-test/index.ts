@@ -99,6 +99,13 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (isCatchmailAddress(String(address))) {
+      return new Response(JSON.stringify({ error: "Send test is only available for built-in domains. Send a real email to this CatchMail address to test delivery." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const demo = makeDemoEmail();
 
     const { error: insertError } = await supabase.from("temp_mail_messages").insert({
