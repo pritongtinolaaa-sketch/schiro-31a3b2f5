@@ -6,13 +6,14 @@ const corsHeaders = {
 };
 
 const LOCAL_DOMAINS = [
+  "dollicons.com",
+  "mailshed.dev",
+  "inboxfwd.net",
+  "tempbox.one",
   "tinola.eu.cc",
   "schiro.qzz.io",
   "schiro.dpdns.org",
   "schiro.indevs.in",
-  "mailshed.dev",
-  "inboxfwd.net",
-  "tempbox.one",
 ] as const;
 
 type MailTmDomain = {
