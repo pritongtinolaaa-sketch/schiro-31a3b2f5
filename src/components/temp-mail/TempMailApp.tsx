@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-import InboxCreatorCard, { getTempMailDomains, type Domain } from "@/components/temp-mail/InboxCreatorCard";
+import InboxCreatorCard, { type Domain } from "@/components/temp-mail/InboxCreatorCard";
 
 import {
   clearInboxRemote,
