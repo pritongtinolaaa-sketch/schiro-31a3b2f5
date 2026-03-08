@@ -204,6 +204,11 @@ export default function TempMailApp() {
     }
   }, []);
 
+  const getDomainNote = useCallback((domain: Domain | null) => {
+    if (!domain) return null;
+    return DOMAIN_NOTES[domain] ?? null;
+  }, []);
+
   const loadProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle();
     if (error) {
