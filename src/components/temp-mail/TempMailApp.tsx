@@ -617,10 +617,11 @@ export default function TempMailApp() {
 
             {authMode === "signup" ? (
               <Input
-                placeholder="Display name"
+                placeholder="Username"
                 value={authDisplayName}
                 onChange={(e) => setAuthDisplayName(e.target.value)}
                 disabled={authLoading}
+                required
               />
             ) : null}
 
