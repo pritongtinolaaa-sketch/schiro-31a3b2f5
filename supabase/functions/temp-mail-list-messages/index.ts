@@ -179,7 +179,19 @@ function extractReadableBody(raw: string) {
   const plain: string[] = [];
   const html: string[] = [];
 
-  collectReadableBodies(normalized, plain, html);
+  const firstLine = normalized.split("\n", 1)[0]?.trim() ?? "";
+  if (firstLine.startsWith("--") && normalized.includes("Content-Transfer-Encoding")) {
+    const boundary = firstLine.slice(2).trim();
+    const token = `--${boundary}`;
+    const parts = normalized.split(token);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (!trimmed || trimmed === "--" || trimmed.startsWith("--")) continue;
+      collectReadableBodies(trimmed, plain, html, 1);
+    }
+  } else {
+    collectReadableBodies(normalized, plain, html);
+  }
 
   if (plain.length > 0) return plain.join("\n\n").trim();
   if (html.length > 0) return html.join("\n\n").trim();
