@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Session, User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { Copy, Inbox, Mail, Shield, Sparkles, Trash2 } from "lucide-react";
 
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 import InboxCreatorCard, { getTempMailDomains, type Domain } from "@/components/temp-mail/InboxCreatorCard";
 
@@ -71,6 +75,16 @@ export default function TempMailApp() {
   const [emails, setEmails] = useState<TempMailMessage[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authDisplayName, setAuthDisplayName] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
   useEffect(() => {
     if (!activeId && emails[0]?.id) setActiveId(emails[0].id);
   }, [activeId, emails]);
@@ -96,6 +110,39 @@ export default function TempMailApp() {
     el.addEventListener("pointermove", onMove);
     return () => el.removeEventListener("pointermove", onMove);
   }, [prefersReducedMotion]);
+
+  const loadProfile = useCallback(async (userId: string) => {
+    const { data, error } = await supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle();
+    if (error) {
+      setProfileName(null);
+      return;
+    }
+    setProfileName(data?.display_name ?? null);
+  }, []);
+
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+      const nextUser = currentSession?.user ?? null;
+      setUser(nextUser);
+      if (nextUser) {
+        void loadProfile(nextUser.id);
+      } else {
+        setProfileName(null);
+      }
+    });
+
+    void supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      const nextUser = data.session?.user ?? null;
+      setUser(nextUser);
+      if (nextUser) {
+        void loadProfile(nextUser.id);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [loadProfile]);
 
   const refreshMessages = useCallback(async (opts?: { silent?: boolean }) => {
     if (!address || !token) return;
@@ -278,21 +325,89 @@ export default function TempMailApp() {
     }
   };
 
+  const handleAuthSubmit = async () => {
+    if (!authEmail || !authPassword) {
+      toast.error("Missing credentials", { description: "Please enter email and password." });
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      if (authMode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: authPassword,
+        });
+        if (error) throw error;
+        toast.success("Logged in");
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email: authEmail,
+          password: authPassword,
+          options: {
+            data: {
+              display_name: authDisplayName || undefined,
+            },
+            emailRedirectTo: window.location.origin,
+          },
+        });
+        if (error) throw error;
+        toast.success("Account created", { description: "Check your email to verify your account." });
+      }
+
+      setIsAuthDialogOpen(false);
+      setAuthPassword("");
+    } catch (e: any) {
+      toast.error("Authentication failed", { description: e?.message ?? "Please try again." });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Couldn't sign out", { description: error.message });
+      return;
+    }
+    toast.success("Signed out");
+  };
+
+  const isLoggedIn = Boolean(session);
+  const profileLabel = profileName ?? user?.email?.split("@")[0] ?? "Profile";
+
   return (
     <div className="min-h-screen">
+      <nav className="sticky top-0 z-50 border-b bg-background/85 backdrop-blur-md">
+        <div className="container flex h-14 items-center justify-between">
+          <div className="inline-flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <Mail className="h-4 w-4" />
+            </span>
+            <span className="text-sm font-semibold tracking-wide">schiromail</span>
+          </div>
+
+          {isLoggedIn ? (
+            <div className="flex items-center gap-2">
+              <Button variant="glass" size="sm">{profileLabel}</Button>
+              <Button variant="outline" size="sm" onClick={() => void handleSignOut()}>
+                Sign out
+              </Button>
+            </div>
+          ) : (
+            <Button variant="hero" size="sm" onClick={() => setIsAuthDialogOpen(true)}>
+              Login
+            </Button>
+          )}
+        </div>
+      </nav>
+
       <header ref={heroRef} className="relative overflow-hidden border-b bg-hero">
         <div className="pointer-events-none absolute inset-0 opacity-70" />
         <div className="container relative py-10 md:py-14">
           <div className="grid gap-8 md:grid-cols-12 md:items-start">
             <div className="md:col-span-7">
-              <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1.5 shadow-elev">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                  <Mail className="h-3.5 w-3.5" />
-                </span>
-                <span className="text-sm font-semibold tracking-wide">schiromail</span>
-              </div>
-
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow-elev">
+              <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow-elev">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Real inbox • persisted • realtime updates</span>
               </div>
@@ -456,6 +571,65 @@ export default function TempMailApp() {
           </p>
         </footer>
       </main>
+
+      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{authMode === "login" ? "Login" : "Create account"}</DialogTitle>
+            <DialogDescription>
+              {authMode === "login"
+                ? "Sign in to access your account."
+                : "Create your account. Email verification is required before login."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            className="grid gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleAuthSubmit();
+            }}
+          >
+            {authMode === "signup" ? (
+              <Input
+                placeholder="Display name"
+                value={authDisplayName}
+                onChange={(e) => setAuthDisplayName(e.target.value)}
+                disabled={authLoading}
+              />
+            ) : null}
+
+            <Input
+              type="email"
+              placeholder="you@example.com"
+              value={authEmail}
+              onChange={(e) => setAuthEmail(e.target.value)}
+              disabled={authLoading}
+              required
+            />
+            <Input
+              type="password"
+              placeholder="Password"
+              value={authPassword}
+              onChange={(e) => setAuthPassword(e.target.value)}
+              disabled={authLoading}
+              required
+            />
+
+            <Button type="submit" variant="hero" disabled={authLoading}>
+              {authLoading ? "Please wait..." : authMode === "login" ? "Login" : "Create account"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setAuthMode((m) => (m === "login" ? "signup" : "login"))}
+              disabled={authLoading}
+            >
+              {authMode === "login" ? "Need an account? Sign up" : "Already have an account? Login"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
