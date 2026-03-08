@@ -324,6 +324,15 @@ export default function TempMailApp() {
     }
   };
 
+  const copyClaimedAddress = async (claimedAddress: string) => {
+    try {
+      await navigator.clipboard.writeText(claimedAddress);
+      toast.success("Copied address", { description: claimedAddress });
+    } catch {
+      toast.error("Couldn't copy", { description: "Your browser blocked clipboard access." });
+    }
+  };
+
   const ensureInbox = async () => {
     setLoadingInbox(true);
     try {
@@ -717,6 +726,17 @@ export default function TempMailApp() {
                         })()}
                       </div>
                     </button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      disabled={deletingOwnedAddress === selectedClaimedInbox.address}
+                      onClick={() => void copyClaimedAddress(selectedClaimedInbox.address)}
+                      aria-label={`Copy ${selectedClaimedInbox.address}`}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
                     <Button
                       type="button"
                       variant="ghost"
