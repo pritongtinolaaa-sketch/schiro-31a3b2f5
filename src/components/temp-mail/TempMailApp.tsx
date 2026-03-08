@@ -442,13 +442,26 @@ export default function TempMailApp() {
   }, [address, token, refreshMessages]);
 
   useEffect(() => {
-    if (!address || !token) return;
+    if (!address || !token) {
+      setRefreshCountdown(AUTO_REFRESH_SECONDS);
+      return;
+    }
+
+    setRefreshCountdown(AUTO_REFRESH_SECONDS);
+
+    const countdownId = window.setInterval(() => {
+      setRefreshCountdown((prev) => (prev <= 1 ? AUTO_REFRESH_SECONDS : prev - 1));
+    }, 1000);
 
     const intervalId = window.setInterval(() => {
       void refreshMessages({ silent: true });
-    }, 15000);
+      setRefreshCountdown(AUTO_REFRESH_SECONDS);
+    }, AUTO_REFRESH_SECONDS * 1000);
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearInterval(countdownId);
+      window.clearInterval(intervalId);
+    };
   }, [address, token, refreshMessages]);
 
   const copyAddress = async () => {
