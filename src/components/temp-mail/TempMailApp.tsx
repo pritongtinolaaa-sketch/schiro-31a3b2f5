@@ -281,7 +281,7 @@ export default function TempMailApp() {
 
   const openClaimedInbox = async (claimedInbox: OwnedInbox) => {
     const [claimedLocalPart, claimedDomain] = claimedInbox.address.split("@");
-    if (!claimedLocalPart || !claimedDomain || !(DOMAINS as readonly string[]).includes(claimedDomain)) {
+    if (!claimedLocalPart || !claimedDomain || !availableDomains.includes(claimedDomain)) {
       toast.error("Invalid claimed address", { description: "That address can't be opened." });
       return;
     }
