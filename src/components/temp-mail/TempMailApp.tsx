@@ -403,8 +403,8 @@ export default function TempMailApp() {
           </div>
 
           {isLoggedIn ? (
-            <div className="flex items-center gap-2">
-              <Button variant="glass" size="sm">{profileLabel}</Button>
+            <div className="flex items-center gap-3">
+              <span className="max-w-[180px] truncate text-sm text-muted-foreground">{profileLabel}</span>
               <Button variant="outline" size="sm" onClick={() => void handleSignOut()}>
                 Sign out
               </Button>
