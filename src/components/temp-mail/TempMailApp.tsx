@@ -727,7 +727,7 @@ export default function TempMailApp() {
                       Check out my other sites
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[22rem] p-0" align="start">
+                  <PopoverContent className="w-[22rem] p-0" align="center">
                     <Card className="border-0 shadow-none">
                       <div className="space-y-3 p-4">
                         <div className="text-sm font-semibold">Visit my other projects</div>
