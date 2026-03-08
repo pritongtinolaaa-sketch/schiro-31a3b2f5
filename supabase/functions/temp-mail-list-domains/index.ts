@@ -38,7 +38,7 @@ async function fetchMailTmDomains(): Promise<string[]> {
     return members
       .filter((item) => item?.isActive !== false && item?.isPrivate !== true)
       .map((item) => String(item.domain ?? "").trim().toLowerCase())
-      .filter((value) => value.length > 0);
+      .filter((value) => value.length > 0 && !BLOCKED_DOMAINS.has(value));
   } catch {
     return [];
   }
