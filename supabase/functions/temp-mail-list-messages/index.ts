@@ -76,13 +76,19 @@ function decodeBase64(input: string) {
 
     const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
     const latin1 = binary;
+    const repairedFromLatin1 = new TextDecoder("utf-8", { fatal: false }).decode(
+      Uint8Array.from(latin1, (ch) => ch.charCodeAt(0)),
+    );
 
     const utf8HasCjk = /[\u3040-\u30ff\u3400-\u9fff]/.test(utf8);
+    const repairedHasCjk = /[\u3040-\u30ff\u3400-\u9fff]/.test(repairedFromLatin1);
     const latin1LooksMojibake = /(Ã.|ã.|Â.|Ð.|Ñ.|å.|æ.|ç.)/.test(latin1);
 
+    if (latin1LooksMojibake && repairedHasCjk) return repairedFromLatin1;
     if (utf8HasCjk && latin1LooksMojibake) return utf8;
 
-    return readabilityScore(utf8) >= readabilityScore(latin1) ? utf8 : latin1;
+    const best = [utf8, repairedFromLatin1, latin1].sort((a, b) => readabilityScore(b) - readabilityScore(a))[0];
+    return best;
   } catch {
     return input;
   }
