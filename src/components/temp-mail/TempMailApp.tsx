@@ -183,6 +183,31 @@ export default function TempMailApp() {
   };
 
   useEffect(() => {
+    if (!authReady || user || address || creatingGuestInboxRef.current) return;
+
+    const domain = selectedDomain ?? DOMAINS[0];
+    if (!selectedDomain) setSelectedDomain(domain);
+
+    creatingGuestInboxRef.current = true;
+    setLoadingInbox(true);
+
+    void createInbox({ domain })
+      .then((created) => {
+        setAddress(created.address);
+        setToken(created.token);
+        setExpiresAt(created.expiresAt);
+        saveInbox(created);
+      })
+      .catch((e: any) => {
+        toast.error("Couldn't create guest inbox", { description: e?.message ?? "Please try again." });
+      })
+      .finally(() => {
+        creatingGuestInboxRef.current = false;
+        setLoadingInbox(false);
+      });
+  }, [authReady, user, address, selectedDomain]);
+
+  useEffect(() => {
     void ensureInbox();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
