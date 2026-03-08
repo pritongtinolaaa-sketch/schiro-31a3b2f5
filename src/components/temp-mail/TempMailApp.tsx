@@ -111,6 +111,39 @@ export default function TempMailApp() {
     return () => el.removeEventListener("pointermove", onMove);
   }, [prefersReducedMotion]);
 
+  const loadProfile = useCallback(async (userId: string) => {
+    const { data, error } = await supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle();
+    if (error) {
+      setProfileName(null);
+      return;
+    }
+    setProfileName(data?.display_name ?? null);
+  }, []);
+
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+      const nextUser = currentSession?.user ?? null;
+      setUser(nextUser);
+      if (nextUser) {
+        void loadProfile(nextUser.id);
+      } else {
+        setProfileName(null);
+      }
+    });
+
+    void supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      const nextUser = data.session?.user ?? null;
+      setUser(nextUser);
+      if (nextUser) {
+        void loadProfile(nextUser.id);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [loadProfile]);
+
   const refreshMessages = useCallback(async (opts?: { silent?: boolean }) => {
     if (!address || !token) return;
     if (!opts?.silent) setLoadingMessages(true);
