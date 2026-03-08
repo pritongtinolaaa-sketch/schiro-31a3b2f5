@@ -188,6 +188,31 @@ export default function TempMailApp() {
     }
   }, [user]);
 
+  const openClaimedInbox = async (claimedAddress: string) => {
+    const [claimedLocalPart, claimedDomain] = claimedAddress.split("@");
+    if (!claimedLocalPart || !claimedDomain || !(DOMAINS as readonly string[]).includes(claimedDomain)) {
+      toast.error("Invalid claimed address", { description: "That address can't be opened." });
+      return;
+    }
+
+    setLoadingInbox(true);
+    try {
+      const created = await createInbox({ domain: claimedDomain as Domain, localPart: claimedLocalPart });
+      setAddress(created.address);
+      setToken(created.token);
+      setExpiresAt(created.expiresAt);
+      setSelectedDomain(claimedDomain as Domain);
+      saveInbox(created);
+      setActiveId(null);
+      await refreshMessages({ silent: true });
+      toast.success("Claimed inbox opened", { description: created.address });
+    } catch (e: any) {
+      toast.error("Couldn't open claimed inbox", { description: e?.message ?? "Please try again." });
+    } finally {
+      setLoadingInbox(false);
+    }
+  };
+
   const ensureInbox = async () => {
     setLoadingInbox(true);
     try {
