@@ -205,7 +205,7 @@ export default function TempMailApp() {
         creatingGuestInboxRef.current = false;
         setLoadingInbox(false);
       });
-  }, [authReady, user, address, selectedDomain]);
+  }, [authReady, loadingInbox, user, address, selectedDomain]);
 
   useEffect(() => {
     void ensureInbox();
