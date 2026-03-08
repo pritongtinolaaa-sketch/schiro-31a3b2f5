@@ -380,8 +380,8 @@ export default function TempMailApp() {
   useEffect(() => {
     if (!authReady || loadingInbox || user || address || creatingGuestInboxRef.current) return;
 
-    const domain = selectedDomain ?? DOMAINS[0];
-    if (!selectedDomain) setSelectedDomain(domain);
+    const domain = selectedDomain ?? availableDomains[0];
+    if (!selectedDomain && domain) setSelectedDomain(domain);
 
     creatingGuestInboxRef.current = true;
     setLoadingInbox(true);
