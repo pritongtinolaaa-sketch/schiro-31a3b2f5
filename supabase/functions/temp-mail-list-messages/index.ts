@@ -39,8 +39,55 @@ function getMailsacHeaders() {
   return apiKey ? { "Mailsac-Key": apiKey } : {};
 }
 
+function decodeQuotedPrintable(input: string) {
+  return input
+    .replace(/=\r?\n/g, "")
+    .replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+}
+
+function decodeHtmlEntities(input: string) {
+  return input
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)))
+    .replace(/&#x([A-Fa-f0-9]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function looksLikeHtml(input: string) {
+  return /<!doctype\s+html/i.test(input) || /<html[\s>]/i.test(input) || /<body[\s>]/i.test(input) || /<\/\w+>/.test(input);
+}
+
+function htmlToText(input: string) {
+  return decodeHtmlEntities(
+    input
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<br\s*\/?\s*>/gi, "\n")
+      .replace(/<\/p\s*>/gi, "\n\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim(),
+  );
+}
+
+function normalizeBody(input: unknown) {
+  const raw = String(input ?? "").trim();
+  if (!raw) return "";
+  const decoded = decodeQuotedPrintable(raw);
+  if (looksLikeHtml(decoded)) {
+    const text = htmlToText(decoded).trim();
+    return text || decoded;
+  }
+  return decodeHtmlEntities(decoded).trim();
+}
+
 function toMessageRow(row: any) {
-  const body = String(row.body ?? "");
+  const body = normalizeBody(row.body);
   const previewLine = body.split("\n").find((l) => l.trim().length > 0) ?? body.slice(0, 80);
   return {
     id: row.id,
@@ -56,7 +103,7 @@ function toCatchmailMessageRow(row: any) {
   const dateInput = String(row?.date ?? row?.received_at ?? row?.created_at ?? "");
   const parsedTs = Date.parse(dateInput);
   const preview = String(row?.preview ?? row?.snippet ?? "").trim();
-  const bodyText = String(row?.body?.text ?? "").trim();
+  const bodyText = normalizeBody(row?.body?.text ?? row?.body ?? "");
 
   return {
     id: String(row?.id ?? crypto.randomUUID()),

@@ -63,6 +63,10 @@ function htmlToText(input: string) {
   );
 }
 
+function looksLikeHtml(input: string) {
+  return /<!doctype\s+html/i.test(input) || /<html[\s>]/i.test(input) || /<body[\s>]/i.test(input) || /<\/\w+>/.test(input);
+}
+
 function splitHeadersAndBody(part: string) {
   const normalized = part.replace(/\r\n/g, "\n");
   const idx = normalized.indexOf("\n\n");
