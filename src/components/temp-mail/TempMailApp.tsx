@@ -230,6 +230,15 @@ export default function TempMailApp() {
   }, [authReady, loadingInbox, user, address, selectedDomain]);
 
   useEffect(() => {
+    if (!authReady) return;
+    if (!user) {
+      setOwnedInboxes([]);
+      return;
+    }
+    void refreshOwnedInboxes();
+  }, [authReady, user, refreshOwnedInboxes]);
+
+  useEffect(() => {
     void ensureInbox();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
