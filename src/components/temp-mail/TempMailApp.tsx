@@ -123,6 +123,10 @@ export default function TempMailApp() {
   const creatingGuestInboxRef = useRef(false);
 
   useEffect(() => {
+    setClaimedSeenMap(readClaimedSeenMap());
+  }, []);
+
+  useEffect(() => {
     if (prefersReducedMotion) return;
 
     const el = heroRef.current;
