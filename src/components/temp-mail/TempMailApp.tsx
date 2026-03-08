@@ -348,6 +348,7 @@ export default function TempMailApp() {
           options: {
             data: {
               display_name: authDisplayName || undefined,
+              username: authDisplayName || undefined,
             },
             emailRedirectTo: window.location.origin,
           },
