@@ -182,19 +182,22 @@ function collectReadableBodies(rawPart: string, plain: string[], html: string[],
   const decoded = decodeTransferEncoding(bodyRaw, transferEncoding).trim();
   if (!decoded) return;
 
+  const isReadable = readabilityScore(decoded) > 0.7;
+
   if (contentType.includes("text/plain")) {
     if (!hasExplicitContentType && looksLikeHtml(decoded)) {
       const text = htmlToText(decoded);
-      if (text) html.push(text);
+      if (text && readabilityScore(text) > 0.55) html.push(text);
       return;
     }
-    plain.push(decoded);
+
+    if (isReadable) plain.push(decoded);
     return;
   }
 
   if (contentType.includes("text/html")) {
     const text = htmlToText(decoded);
-    if (text) html.push(text);
+    if (text && readabilityScore(text) > 0.55) html.push(text);
   }
 }
 
