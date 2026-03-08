@@ -29,6 +29,7 @@ export default function InboxCreatorCard(props: {
   onRegenerate: () => void;
   onCopy: () => void;
   onClear: () => void;
+  onGoToInbox: () => void;
 }) {
   const {
     loadingInbox,
@@ -43,6 +44,7 @@ export default function InboxCreatorCard(props: {
     onRegenerate,
     onCopy,
     onClear,
+    onGoToInbox,
   } = props;
 
   const hasInbox = Boolean(address);
@@ -126,9 +128,9 @@ export default function InboxCreatorCard(props: {
             </Button>
           </div>
 
-          <div className="mt-2 rounded-lg border bg-background/60 p-3 text-xs text-muted-foreground">
-            Tip: Create an email first, then press “Receive” to deliver a real test message.
-          </div>
+          <Button className="mt-2 w-full" variant="outline" onClick={onGoToInbox}>
+            Go to inbox ↓
+          </Button>
         </div>
       </div>
     </Card>

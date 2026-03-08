@@ -715,10 +715,8 @@ export default function TempMailApp() {
                 </div>
               </div>
 
-              <div className="mt-8 flex justify-center md:absolute md:bottom-2 md:left-1/2 md:mt-0 md:-translate-x-1/2">
-                <Button variant="outline" onClick={scrollToInbox}>
-                  Go to inbox ↓
-                </Button>
+              <div className="mt-8 rounded-lg border bg-background/60 p-3 text-xs text-muted-foreground md:absolute md:bottom-2 md:left-1/2 md:w-[24rem] md:max-w-[92%] md:-translate-x-1/2 md:mt-0">
+                Tip: Create an email first, then press “Receive” to deliver a real test message.
               </div>
             </div>
 
@@ -736,6 +734,7 @@ export default function TempMailApp() {
                 onRegenerate={() => void regenerate()}
                 onCopy={() => void copyAddress()}
                 onClear={() => void clearInbox()}
+                onGoToInbox={scrollToInbox}
               />
             </div>
           </div>
