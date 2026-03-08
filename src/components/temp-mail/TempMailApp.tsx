@@ -412,6 +412,15 @@ export default function TempMailApp() {
   }, [authReady, user, refreshOwnedInboxes]);
 
   useEffect(() => {
+    void loadAvailableDomains();
+  }, [loadAvailableDomains]);
+
+  useEffect(() => {
+    if (selectedDomain && availableDomains.includes(selectedDomain)) return;
+    setSelectedDomain(availableDomains[0] ?? null);
+  }, [availableDomains, selectedDomain]);
+
+  useEffect(() => {
     void ensureInbox();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
