@@ -22,6 +22,7 @@ import {
   deleteOwnedInbox,
   listMessages,
   listOwnedInboxes,
+  listAvailableDomains,
   loadSavedInbox,
   saveInbox,
   getKnownInboxToken,
