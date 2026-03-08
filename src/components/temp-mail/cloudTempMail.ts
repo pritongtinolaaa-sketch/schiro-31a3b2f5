@@ -114,6 +114,12 @@ export async function clearInboxRemote(input: { address: string; token: string }
   if (error) throw error;
 }
 
+export async function listOwnedInboxes(): Promise<OwnedInbox[]> {
+  const { data, error } = await supabase.functions.invoke<{ inboxes: OwnedInbox[] }>("temp-mail-list-owned-inboxes");
+  if (error) throw error;
+  return data?.inboxes ?? [];
+}
+
 export function subscribeToInbox(address: string, onNewMail: () => void) {
   const channel = supabase
     .channel(`inbox:${address}`)
