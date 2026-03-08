@@ -18,6 +18,11 @@ type CreateInboxResponse = {
 type ListMessagesResponse = {
   messages: TempMailMessage[];
   expiresAt: string;
+
+export type OwnedInbox = {
+  address: string;
+  createdAt: string;
+  expiresAt: string;
 };
 
 const STORAGE_KEY = "temp_mail_inbox_v1";
