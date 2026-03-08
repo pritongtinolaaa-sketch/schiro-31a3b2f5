@@ -203,8 +203,10 @@ export default function TempMailApp() {
       setExpiresAt(created.expiresAt);
       setSelectedDomain(claimedDomain as Domain);
       saveInbox(created);
-      setActiveId(null);
-      await refreshMessages({ silent: true });
+      const res = await listMessages({ address: created.address, token: created.token });
+      setEmails(res.messages);
+      setExpiresAt(res.expiresAt);
+      setActiveId(res.messages[0]?.id ?? null);
       toast.success("Claimed inbox opened", { description: created.address });
     } catch (e: any) {
       toast.error("Couldn't open claimed inbox", { description: e?.message ?? "Please try again." });
