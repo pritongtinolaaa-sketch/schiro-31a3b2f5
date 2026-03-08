@@ -81,22 +81,32 @@ function formatTime(ts: number) {
   });
 }
 
+function readabilityScore(input: string) {
+  if (!input) return 0;
+  let readable = 0;
+  let invalid = 0;
+
+  for (const ch of input) {
+    const code = ch.charCodeAt(0);
+    const isWhitespace = ch === "\n" || ch === "\r" || ch === "\t";
+    const isPrintableAscii = code >= 32 && code <= 126;
+    const isCommonUnicode = code >= 0xa0 && ch !== "�";
+
+    if (ch === "�" || (code < 32 && !isWhitespace) || code === 127) {
+      invalid += 1;
+      continue;
+    }
+
+    if (isWhitespace || isPrintableAscii || isCommonUnicode) readable += 1;
+  }
+
+  const total = readable + invalid;
+  return total > 0 ? readable / total : 0;
+}
+
 function decodeBodyForDisplay(input: string) {
   const raw = String(input ?? "").trim();
   if (!raw) return "";
-
-  const decodeBase64Utf8 = (value: string) => {
-    try {
-      let compact = value.replace(/[^A-Za-z0-9+/=_-]/g, "");
-      compact = compact.replace(/-/g, "+").replace(/_/g, "/");
-      const padded = compact.padEnd(Math.ceil(compact.length / 4) * 4, "=");
-      const binary = atob(padded);
-      const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
-      return new TextDecoder().decode(bytes);
-    } catch {
-      return value;
-    }
-  };
 
   const toText = (value: string) =>
     value
@@ -115,24 +125,18 @@ function decodeBodyForDisplay(input: string) {
       .replace(/\n{3,}/g, "\n\n")
       .trim();
 
-  const mimeBase64 = raw.match(/Content-Transfer-Encoding:\s*base64[\s\S]*?\n\n([A-Za-z0-9+/=_\-\n\r]+)(?:\n--|$)/i)?.[1];
-  const candidate = mimeBase64 ?? raw;
-  const compact = candidate.replace(/[^A-Za-z0-9+/=_-]/g, "");
-
-  if (compact.length > 80) {
-    const decoded = decodeBase64Utf8(compact);
-    if (decoded !== compact && decoded !== candidate) {
-      if (/<[^>]+>/.test(decoded)) {
-        const text = toText(decoded);
-        if (text) return text;
-      }
-      return decoded.trim();
-    }
-  }
-
   if (/<[^>]+>/.test(raw)) {
     const text = toText(raw);
     if (text) return text;
+  }
+
+  const compact = raw.replace(/\s+/g, "");
+  if (compact.length > 120 && /^[A-Za-z0-9+/=_-]+$/.test(compact)) {
+    return "Message body is encoded/binary and could not be decoded safely.";
+  }
+
+  if (readabilityScore(raw) < 0.5) {
+    return "Message body is encoded/binary and could not be decoded safely.";
   }
 
   return raw;

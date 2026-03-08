@@ -92,13 +92,46 @@ export async function createInbox(input?: {
   return data;
 }
 
+function readabilityScore(input: string) {
+  if (!input) return 0;
+  let readable = 0;
+  let invalid = 0;
+
+  for (const ch of input) {
+    const code = ch.charCodeAt(0);
+    const isWhitespace = ch === "\n" || ch === "\r" || ch === "\t";
+    const isPrintableAscii = code >= 32 && code <= 126;
+    const isCommonUnicode = code >= 0xa0 && ch !== "�";
+
+    if (ch === "�" || (code < 32 && !isWhitespace) || code === 127) {
+      invalid += 1;
+      continue;
+    }
+
+    if (isWhitespace || isPrintableAscii || isCommonUnicode) readable += 1;
+  }
+
+  const total = readable + invalid;
+  return total > 0 ? readable / total : 0;
+}
+
 function decodeBase64Utf8(input: string) {
   try {
-    const binary = atob(input.replace(/\s+/g, ""));
+    const compact = input.replace(/[^A-Za-z0-9+/=_-]/g, "").replace(/-/g, "+").replace(/_/g, "/");
+    if (compact.length < 40) return null;
+
+    const binary = atob(compact.padEnd(Math.ceil(compact.length / 4) * 4, "="));
+
+    for (let i = 0; i < binary.length; i += 1) {
+      const code = binary.charCodeAt(i);
+      if (code === 0 || (code < 9 || (code > 13 && code < 32))) return null;
+    }
+
     const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
-    return new TextDecoder().decode(bytes);
+    const decoded = new TextDecoder("utf-8", { fatal: false }).decode(bytes).trim();
+    return readabilityScore(decoded) >= 0.7 ? decoded : null;
   } catch {
-    return input;
+    return null;
   }
 }
 
@@ -124,22 +157,22 @@ function normalizeIncomingBody(body: string) {
   const raw = String(body ?? "").trim();
   if (!raw) return "";
 
-  const mimeBase64 = raw.match(/Content-Transfer-Encoding:\s*base64[\s\S]*?\n\n([A-Za-z0-9+/=\n\r]+)(?:\n--|$)/i)?.[1];
-  if (mimeBase64) {
-    const decoded = decodeBase64Utf8(mimeBase64);
-    if (decoded !== mimeBase64) {
-      const text = /<[^>]+>/.test(decoded) ? htmlToText(decoded) : decoded.trim();
-      if (text) return text;
-    }
+  if (/<[^>]+>/.test(raw)) {
+    const text = htmlToText(raw);
+    if (text) return text;
   }
 
   const compact = raw.replace(/\s+/g, "");
-  if (compact.length > 120 && /^[A-Za-z0-9+/=]+$/.test(compact)) {
+  if (compact.length > 120 && /^[A-Za-z0-9+/=_-]+$/.test(compact)) {
     const decoded = decodeBase64Utf8(compact);
-    if (decoded !== raw) {
-      const text = /<[^>]+>/.test(decoded) ? htmlToText(decoded) : decoded.trim();
-      if (text) return text;
+    if (decoded) {
+      return /<[^>]+>/.test(decoded) ? htmlToText(decoded) : decoded;
     }
+    return "Message body is encoded/binary and could not be decoded safely.";
+  }
+
+  if (readabilityScore(raw) < 0.5) {
+    return "Message body is encoded/binary and could not be decoded safely.";
   }
 
   return raw;
