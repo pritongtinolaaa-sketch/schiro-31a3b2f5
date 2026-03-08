@@ -45,15 +45,61 @@ function getMailsacHeaders() {
 }
 
 function decodeQuotedPrintable(input: string) {
-  return input
-    .replace(/=\r?\n/g, "")
-    .replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  const normalized = input.replace(/=\r?\n/g, "");
+  const bytes: number[] = [];
+
+  for (let i = 0; i < normalized.length; i += 1) {
+    const ch = normalized[i];
+    if (ch === "=" && /^[A-Fa-f0-9]{2}$/.test(normalized.slice(i + 1, i + 3))) {
+      bytes.push(parseInt(normalized.slice(i + 1, i + 3), 16));
+      i += 2;
+      continue;
+    }
+    bytes.push(ch.charCodeAt(0));
+  }
+
+  return new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(bytes));
+}
+
+function readabilityScore(input: string) {
+  if (!input) return 0;
+  let readable = 0;
+
+  for (const ch of input) {
+    const code = ch.charCodeAt(0);
+    const isPrintableAscii = code >= 32 && code <= 126;
+    const isWhitespace = ch === "\n" || ch === "\r" || ch === "\t";
+    const isCommonUnicode = code >= 0xa0;
+    if (isPrintableAscii || isWhitespace || isCommonUnicode) readable += 1;
+  }
+
+  return readable / input.length;
 }
 
 function decodeBase64(input: string) {
   try {
-    const compact = input.replace(/\s+/g, "");
-    return atob(compact);
+    const compact = input.replace(/[^A-Za-z0-9+/=_-]/g, "").replace(/-/g, "+").replace(/_/g, "/");
+    if (!compact) return input;
+
+    const padded = compact.padEnd(Math.ceil(compact.length / 4) * 4, "=");
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
+
+    const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    const latin1 = binary;
+    const repairedFromLatin1 = new TextDecoder("utf-8", { fatal: false }).decode(
+      Uint8Array.from(latin1, (ch) => ch.charCodeAt(0)),
+    );
+
+    const utf8HasCjk = /[\u3040-\u30ff\u3400-\u9fff]/.test(utf8);
+    const repairedHasCjk = /[\u3040-\u30ff\u3400-\u9fff]/.test(repairedFromLatin1);
+    const latin1LooksMojibake = /(Ã.|ã.|Â.|Ð.|Ñ.|å.|æ.|ç.)/.test(latin1);
+
+    if (latin1LooksMojibake && repairedHasCjk) return repairedFromLatin1;
+    if (utf8HasCjk && latin1LooksMojibake) return utf8;
+
+    const best = [utf8, repairedFromLatin1, latin1].sort((a, b) => readabilityScore(b) - readabilityScore(a))[0];
+    return best;
   } catch {
     return input;
   }
@@ -158,19 +204,22 @@ function collectReadableBodies(rawPart: string, plain: string[], html: string[],
   const decoded = decodeTransferEncoding(bodyRaw, transferEncoding).trim();
   if (!decoded) return;
 
+  const isReadable = readabilityScore(decoded) > 0.7;
+
   if (contentType.includes("text/plain")) {
     if (!hasExplicitContentType && looksLikeHtml(decoded)) {
       const text = htmlToText(decoded);
-      if (text) html.push(text);
+      if (text && readabilityScore(text) > 0.55) html.push(text);
       return;
     }
-    plain.push(decoded);
+
+    if (isReadable) plain.push(decoded);
     return;
   }
 
   if (contentType.includes("text/html")) {
     const text = htmlToText(decoded);
-    if (text) html.push(text);
+    if (text && readabilityScore(text) > 0.55) html.push(text);
   }
 }
 
