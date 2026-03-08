@@ -68,7 +68,7 @@ async function fetchOwnedDomains(supabase: any, requesterUserId: string | null):
 
   for (const row of data) {
     const domain = extractDomain(String(row?.email_address ?? ""));
-    if (!domain || seen.has(domain)) continue;
+    if (!domain || BLOCKED_DOMAINS.has(domain) || seen.has(domain)) continue;
     seen.add(domain);
     ownedDomains.push(domain);
   }
