@@ -134,6 +134,7 @@ export default function TempMailApp() {
   );
 
   const heroRef = useRef<HTMLDivElement | null>(null);
+  const inboxSectionRef = useRef<HTMLElement | null>(null);
   const creatingGuestInboxRef = useRef(false);
 
   useEffect(() => {
