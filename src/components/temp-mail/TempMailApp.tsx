@@ -507,6 +507,7 @@ export default function TempMailApp() {
       saveInbox(created);
       setEmails([]);
       setActiveId(null);
+      if (user) setSelectedClaimedAddress(created.address);
       toast("New inbox generated", { description: "Your previous inbox was cleared." });
       if (user) await refreshOwnedInboxes();
     } catch (e: any) {
