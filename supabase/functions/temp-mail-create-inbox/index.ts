@@ -18,6 +18,7 @@ const LOCAL_DOMAINS = [
 
 const CATCHMAIL_DOMAINS = ["catchmail.io", "mailistry.com", "zeppost.com"] as const;
 const MAILSAC_DOMAINS = ["mailsac.com"] as const;
+const INBOXKITTEN_DOMAINS = ["inboxkitten.com"] as const;
 
 const BLOCKED_DOMAINS = new Set<string>([
   "mailshed.dev",
@@ -74,7 +75,8 @@ async function isAllowedDomain(input: unknown, supabase: any, requesterUserId: s
   if (
     (LOCAL_DOMAINS as readonly string[]).includes(domain) ||
     (CATCHMAIL_DOMAINS as readonly string[]).includes(domain) ||
-    (MAILSAC_DOMAINS as readonly string[]).includes(domain)
+    (MAILSAC_DOMAINS as readonly string[]).includes(domain) ||
+    (INBOXKITTEN_DOMAINS as readonly string[]).includes(domain)
   )
     return true;
 

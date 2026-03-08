@@ -9,6 +9,7 @@ const corsHeaders = {
 
 const CATCHMAIL_DOMAINS = new Set(["catchmail.io", "mailistry.com", "zeppost.com"]);
 const MAILSAC_DOMAINS = new Set(["mailsac.com"]);
+const INBOXKITTEN_DOMAINS = new Set(["inboxkitten.com"]);
 
 function base64Url(bytes: Uint8Array) {
   const str = btoa(String.fromCharCode(...bytes));
@@ -32,6 +33,10 @@ function isCatchmailAddress(address: string) {
 
 function isMailsacAddress(address: string) {
   return MAILSAC_DOMAINS.has(domainFromAddress(address));
+}
+
+function isInboxKittenAddress(address: string) {
+  return INBOXKITTEN_DOMAINS.has(domainFromAddress(address));
 }
 
 function getMailsacHeaders() {
@@ -162,6 +167,67 @@ async function listMailsacMessages(address: string) {
   return rows.map((row: any) => toMailsacMessageRow(address, row)).sort((a, b) => b.receivedAt - a.receivedAt);
 }
 
+async function listInboxKittenMessages(address: string) {
+  const localPart = String(address.split("@")[0] ?? "").trim().toLowerCase();
+  if (!localPart) return [];
+
+  const listUrl = `https://inboxkitten.com/inbox/${encodeURIComponent(localPart)}/list`;
+  const listResponse = await fetch(listUrl, { method: "GET" });
+  if (!listResponse.ok) {
+    const details = await listResponse.text().catch(() => "");
+    throw new Error(`InboxKitten list lookup failed (${listResponse.status}): ${details || "unknown error"}`);
+  }
+
+  const listHtml = await listResponse.text();
+  if (/there\s+for\s+no\s+messages\s+for\s+this\s+kitten/i.test(listHtml)) {
+    return [];
+  }
+
+  const rawPaths = Array.from(listHtml.matchAll(/href="(\/inbox\/[^"]+)"/gi)).map((m) => m[1]).filter(Boolean) as string[];
+  const messagePaths = Array.from(
+    new Set(
+      rawPaths.filter((path) => {
+        if (!path.startsWith(`/inbox/${localPart}/`)) return false;
+        if (path.endsWith("/list")) return false;
+        return true;
+      }),
+    ),
+  ).slice(0, 30);
+
+  const messages = await Promise.all(
+    messagePaths.map(async (path, index) => {
+      const url = `https://inboxkitten.com${path}`;
+      const response = await fetch(url, { method: "GET" });
+      if (!response.ok) return null;
+
+      const html = await response.text();
+      const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "(no subject)";
+      const textBody = normalizeBody(
+        html
+          .replace(/<style[\s\S]*?<\/style>/gi, " ")
+          .replace(/<script[\s\S]*?<\/script>/gi, " ")
+          .replace(/<br\s*\/?\s*>/gi, "\n")
+          .replace(/<\/p\s*>/gi, "\n\n")
+          .replace(/<[^>]+>/g, " "),
+      );
+
+      const id = path.split("/").filter(Boolean).join("-") || crypto.randomUUID();
+      const preview = textBody.split("\n").find((line) => line.trim().length > 0) ?? "No preview available";
+
+      return {
+        id,
+        from: `public@inboxkitten.com`,
+        subject: decodeHtmlEntities(String(title).trim()) || "(no subject)",
+        preview: preview.slice(0, 160),
+        receivedAt: Date.now() - index * 1000,
+        body: textBody || `Open ${url} to view the full message.`,
+      };
+    }),
+  );
+
+  return messages.filter(Boolean).sort((a, b) => b.receivedAt - a.receivedAt);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -211,6 +277,13 @@ Deno.serve(async (req) => {
 
     if (isMailsacAddress(String(address))) {
       const messages = await listMailsacMessages(String(address));
+      return new Response(JSON.stringify({ messages, expiresAt: inbox.expires_at }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (isInboxKittenAddress(String(address))) {
+      const messages = await listInboxKittenMessages(String(address));
       return new Response(JSON.stringify({ messages, expiresAt: inbox.expires_at }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

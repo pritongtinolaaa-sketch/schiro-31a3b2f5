@@ -9,6 +9,7 @@ const corsHeaders = {
 
 const CATCHMAIL_DOMAINS = new Set(["catchmail.io", "mailistry.com", "zeppost.com"]);
 const MAILSAC_DOMAINS = new Set(["mailsac.com"]);
+const INBOXKITTEN_DOMAINS = new Set(["inboxkitten.com"]);
 
 function base64Url(bytes: Uint8Array) {
   const str = btoa(String.fromCharCode(...bytes));
@@ -103,7 +104,11 @@ Deno.serve(async (req) => {
       await deleteCatchmailMessage(String(address), String(messageId));
     } else if (isMailsacAddress(String(address))) {
       await deleteMailsacMessage(String(address), String(messageId));
-    } else {
+    } else if (INBOXKITTEN_DOMAINS.has(domainFromAddress(String(address)))) {
+      return new Response(JSON.stringify({ error: "InboxKitten messages are public and remote deletion is not supported." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
       const { error: delError } = await supabase
         .from("temp_mail_messages")
         .delete()

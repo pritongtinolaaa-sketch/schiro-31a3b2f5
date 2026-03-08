@@ -30,6 +30,7 @@ export default function InboxCreatorCard(props: {
   onCopy: () => void;
   onClear: () => void;
   onGoToInbox: () => void;
+  getDomainNote?: (domain: Domain | null) => string | null;
 }) {
   const {
     loadingInbox,
@@ -45,6 +46,7 @@ export default function InboxCreatorCard(props: {
     onCopy,
     onClear,
     onGoToInbox,
+    getDomainNote,
   } = props;
 
   const hasInbox = Boolean(address);
@@ -107,6 +109,9 @@ export default function InboxCreatorCard(props: {
               ))}
             </SelectContent>
           </Select>
+          {getDomainNote?.(selectedDomain) ? (
+            <div className="text-xs text-muted-foreground">Note: {getDomainNote(selectedDomain)}</div>
+          ) : null}
 
           <div className="mt-3">
             <Button

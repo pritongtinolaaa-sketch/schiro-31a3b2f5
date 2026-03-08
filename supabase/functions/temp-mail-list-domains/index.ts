@@ -18,6 +18,7 @@ const LOCAL_DOMAINS = [
 
 const CATCHMAIL_DOMAINS = ["catchmail.io", "mailistry.com", "zeppost.com"] as const;
 const MAILSAC_DOMAINS = ["mailsac.com"] as const;
+const INBOXKITTEN_DOMAINS = ["inboxkitten.com"] as const;
 
 const BLOCKED_DOMAINS = new Set<string>([
   "mailshed.dev",
@@ -109,6 +110,7 @@ Deno.serve(async (req) => {
     const localSet = new Set<string>(LOCAL_DOMAINS.map((d) => d.toLowerCase()));
     const catchmailSet = new Set<string>(CATCHMAIL_DOMAINS.map((d) => d.toLowerCase()));
     const mailsacSet = new Set<string>(MAILSAC_DOMAINS.map((d) => d.toLowerCase()));
+    const inboxkittenSet = new Set<string>(INBOXKITTEN_DOMAINS.map((d) => d.toLowerCase()));
     const ownedSet = new Set<string>(ownedDomains);
 
     const localOnly = LOCAL_DOMAINS.filter((d) => !ownedSet.has(d.toLowerCase()));
@@ -125,18 +127,28 @@ Deno.serve(async (req) => {
         !BLOCKED_DOMAINS.has(domain.toLowerCase()),
     );
 
+    const inboxkittenOnly = INBOXKITTEN_DOMAINS.filter(
+      (domain) =>
+        !ownedSet.has(domain.toLowerCase()) &&
+        !localSet.has(domain.toLowerCase()) &&
+        !catchmailSet.has(domain.toLowerCase()) &&
+        !mailsacSet.has(domain.toLowerCase()) &&
+        !BLOCKED_DOMAINS.has(domain.toLowerCase()),
+    );
+
     const externalOnly = Array.from(new Set(external))
       .filter(
         (domain) =>
           !localSet.has(domain) &&
           !catchmailSet.has(domain) &&
           !mailsacSet.has(domain) &&
+          !inboxkittenSet.has(domain) &&
           !ownedSet.has(domain) &&
           !BLOCKED_DOMAINS.has(domain),
       )
       .sort((a, b) => a.localeCompare(b));
 
-    const domains = [...ownedDomains, ...localOnly, ...catchmailOnly, ...mailsacOnly, ...externalOnly];
+    const domains = [...ownedDomains, ...localOnly, ...catchmailOnly, ...mailsacOnly, ...inboxkittenOnly, ...externalOnly];
 
     return new Response(JSON.stringify({ domains }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

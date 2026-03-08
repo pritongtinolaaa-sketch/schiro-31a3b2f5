@@ -35,6 +35,7 @@ async function broadcastNewMail(opts: { supabaseUrl: string; serviceKey: string;
 
 const CATCHMAIL_DOMAINS = new Set(["catchmail.io", "mailistry.com", "zeppost.com"]);
 const MAILSAC_DOMAINS = new Set(["mailsac.com"]);
+const INBOXKITTEN_DOMAINS = new Set(["inboxkitten.com"]);
 
 function domainFromAddress(address: string): string {
   const at = address.lastIndexOf("@");
@@ -43,7 +44,7 @@ function domainFromAddress(address: string): string {
 
 function isExternalProviderAddress(address: string) {
   const domain = domainFromAddress(address);
-  return CATCHMAIL_DOMAINS.has(domain) || MAILSAC_DOMAINS.has(domain);
+  return CATCHMAIL_DOMAINS.has(domain) || MAILSAC_DOMAINS.has(domain) || INBOXKITTEN_DOMAINS.has(domain);
 }
 
 function makeDemoEmail() {
