@@ -901,7 +901,7 @@ export default function TempMailApp() {
         </section>
 
         <footer className="mt-10 border-t pt-6 text-center text-xs text-muted-foreground">
-          <p>(c) Schiro 2026</p>
+          <p>© Schiro 2026</p>
         </footer>
       </main>
 
