@@ -193,7 +193,7 @@ function getBoundary(contentType: string) {
 function decodeTransferEncoding(body: string, encoding: string) {
   const normalized = encoding.toLowerCase();
   if (normalized.includes("quoted-printable")) return decodeQuotedPrintable(body);
-  if (normalized.includes("base64")) return decodeBase64(body);
+  if (normalized.includes("base64")) return decodeBase64(body) ?? body;
   return body;
 }
 
@@ -222,10 +222,10 @@ function collectReadableBodies(rawPart: string, plain: string[], html: string[],
     return;
   }
 
-  const decoded = decodeTransferEncoding(bodyRaw, transferEncoding).trim();
-  if (!decoded) return;
+  const decodedRaw = decodeTransferEncoding(bodyRaw, transferEncoding).trim();
+  if (!decodedRaw) return;
 
-  const isReadable = readabilityScore(decoded) > 0.7;
+  const decoded = pickBestReadable([decodedRaw, repairMojibakeUtf8(decodedRaw)], 0.45) ?? decodedRaw;
 
   if (contentType.includes("text/plain")) {
     if (!hasExplicitContentType && looksLikeHtml(decoded)) {
@@ -234,7 +234,7 @@ function collectReadableBodies(rawPart: string, plain: string[], html: string[],
       return;
     }
 
-    if (isReadable) plain.push(decoded);
+    if (readabilityScore(decoded) > 0.62) plain.push(decoded);
     return;
   }
 
@@ -263,8 +263,8 @@ function extractReadableBody(raw: string) {
     collectReadableBodies(normalized, plain, html);
   }
 
-  if (plain.length > 0) return plain.join("\n\n").trim();
-  if (html.length > 0) return html.join("\n\n").trim();
+  const preferred = pickBestReadable([plain.join("\n\n"), html.join("\n\n")], 0.6);
+  if (preferred) return preferred;
 
   const { bodyRaw } = splitHeadersAndBody(normalized);
   const fallback = decodeQuotedPrintable(bodyRaw).trim();
@@ -272,10 +272,11 @@ function extractReadableBody(raw: string) {
 
   if (looksLikeHtml(fallback)) {
     const text = htmlToText(fallback);
-    return text || fallback;
+    if (text) return text;
   }
 
-  return decodeHtmlEntities(fallback).trim();
+  const repaired = pickBestReadable([decodeHtmlEntities(fallback), repairMojibakeUtf8(fallback)], 0.55);
+  return repaired ?? fallback;
 }
 
 function looksLikeBase64Block(input: string) {
@@ -290,12 +291,14 @@ function normalizeBody(input: unknown) {
   const extracted = extractReadableBody(raw);
   if (looksLikeBase64Block(extracted)) {
     const decoded = decodeBase64(extracted);
-    if (decoded !== extracted) {
+    if (decoded) {
       if (looksLikeHtml(decoded)) {
         const text = htmlToText(decoded).trim();
         if (text) return text;
       }
-      return decodeHtmlEntities(decoded).trim();
+
+      const repaired = pickBestReadable([decodeHtmlEntities(decoded), repairMojibakeUtf8(decoded)], 0.55);
+      if (repaired) return repaired;
     }
   }
 
@@ -309,16 +312,22 @@ function decodeMessageBody(rawInput: unknown) {
   const compact = raw.replace(/\s+/g, "");
   if (compact.length > 80 && /^[A-Za-z0-9+/=]+$/.test(compact)) {
     const decoded = decodeBase64(raw);
-    if (decoded && decoded !== raw) {
+    if (decoded) {
       if (looksLikeHtml(decoded)) {
         const text = htmlToText(decoded).trim();
         if (text) return text;
       }
-      return decodeHtmlEntities(decoded).trim();
+
+      const repaired = pickBestReadable([decodeHtmlEntities(decoded), repairMojibakeUtf8(decoded)], 0.55);
+      if (repaired) return repaired;
     }
   }
 
-  return normalizeBody(raw);
+  const normalized = normalizeBody(raw);
+  const repaired = pickBestReadable([normalized, repairMojibakeUtf8(normalized)], 0.6);
+  if (repaired) return repaired;
+
+  return "Message body is encoded/binary and could not be decoded safely.";
 }
 
 function toMessageRow(row: any) {
