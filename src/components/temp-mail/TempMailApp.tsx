@@ -283,16 +283,16 @@ export default function TempMailApp() {
       <header ref={heroRef} className="relative overflow-hidden border-b bg-hero">
         <div className="pointer-events-none absolute inset-0 opacity-70" />
         <div className="container relative py-10 md:py-14">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1.5 shadow-elev">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <Mail className="h-3.5 w-3.5" />
-            </span>
-            <span className="text-sm font-semibold tracking-wide">schiromail</span>
-          </div>
-
           <div className="grid gap-8 md:grid-cols-12 md:items-start">
             <div className="md:col-span-7">
-              <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow-elev">
+              <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1.5 shadow-elev">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <Mail className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-sm font-semibold tracking-wide">schiromail</span>
+              </div>
+
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow-elev">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Real inbox • persisted • realtime updates</span>
               </div>
