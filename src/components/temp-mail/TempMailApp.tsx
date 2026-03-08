@@ -763,9 +763,14 @@ export default function TempMailApp() {
                 <div className="text-sm font-medium">Inbox</div>
                 <div className="text-xs text-muted-foreground">{emails.length} message(s)</div>
               </div>
-              <Button variant="secondary" size="sm" onClick={receiveTestEmail} disabled={loadingInbox || !address}>
-                <Inbox /> Receive
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" size="sm" onClick={receiveTestEmail} disabled={loadingInbox || !address}>
+                  <Inbox /> Receive
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => void refreshMessages()} disabled={loadingMessages || !address}>
+                  Refresh
+                </Button>
+              </div>
             </div>
 
             <div className="max-h-[520px] overflow-auto">
