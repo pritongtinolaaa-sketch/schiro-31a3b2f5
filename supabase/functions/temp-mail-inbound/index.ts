@@ -113,6 +113,7 @@ function collectReadableBodies(rawPart: string, plain: string[], html: string[],
 
   const { headersRaw, bodyRaw } = splitHeadersAndBody(rawPart);
   const headers = parseHeaders(headersRaw);
+  const hasExplicitContentType = Boolean(headers["content-type"]);
   const contentType = (headers["content-type"] ?? "text/plain").toLowerCase();
   const transferEncoding = headers["content-transfer-encoding"] ?? "";
 
@@ -136,6 +137,11 @@ function collectReadableBodies(rawPart: string, plain: string[], html: string[],
   if (!decoded) return;
 
   if (contentType.includes("text/plain")) {
+    if (!hasExplicitContentType && looksLikeHtml(decoded)) {
+      const text = htmlToText(decoded);
+      if (text) html.push(text);
+      return;
+    }
     plain.push(decoded);
     return;
   }
