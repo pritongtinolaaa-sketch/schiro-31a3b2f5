@@ -133,6 +133,22 @@ export default function TempMailApp() {
   }, []);
 
   useEffect(() => {
+    if (ownedInboxes.length === 0) {
+      if (selectedClaimedAddress !== null) setSelectedClaimedAddress(null);
+      return;
+    }
+
+    if (address && ownedInboxes.some((inbox) => inbox.address === address)) {
+      if (selectedClaimedAddress !== address) setSelectedClaimedAddress(address);
+      return;
+    }
+
+    if (!selectedClaimedAddress || !ownedInboxes.some((inbox) => inbox.address === selectedClaimedAddress)) {
+      setSelectedClaimedAddress(ownedInboxes[0].address);
+    }
+  }, [ownedInboxes, address, selectedClaimedAddress]);
+
+  useEffect(() => {
     if (prefersReducedMotion) return;
 
     const el = heroRef.current;
