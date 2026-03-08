@@ -9,14 +9,19 @@ const corsHeaders = {
 
 const LOCAL_DOMAINS = [
   "dollicons.com",
-  "mailshed.dev",
-  "inboxfwd.net",
-  "tempbox.one",
   "tinola.eu.cc",
   "schiro.qzz.io",
   "schiro.dpdns.org",
   "schiro.indevs.in",
 ] as const;
+
+const BLOCKED_DOMAINS = new Set<string>([
+  "mailshed.dev",
+  "inboxfwd.net",
+  "tempbox.one",
+  "schhiro.store",
+  "schiro.store",
+]);
 
 type MailTmDomain = {
   domain?: string;
