@@ -716,7 +716,7 @@ export default function TempMailApp() {
                 </div>
               </div>
 
-              <div className="mt-10 rounded-lg border bg-background/60 p-3 text-xs text-muted-foreground md:absolute md:bottom-0 md:left-0 md:w-[24rem] md:max-w-[92%] md:mt-0">
+              <div className="mt-10 rounded-lg border bg-background/60 p-3 text-xs text-muted-foreground md:absolute md:bottom-0 md:left-0 md:w-[30rem] md:max-w-[92%] md:mt-0">
                 Tip: Create an email first, then press “Receive” to deliver a real test message.
               </div>
             </div>
