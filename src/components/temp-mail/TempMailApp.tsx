@@ -381,6 +381,7 @@ export default function TempMailApp() {
     if (!authReady || loadingInbox || user || address || creatingGuestInboxRef.current) return;
 
     const domain = selectedDomain ?? availableDomains[0];
+    if (!domain) return;
     if (!selectedDomain && domain) setSelectedDomain(domain);
 
     creatingGuestInboxRef.current = true;
