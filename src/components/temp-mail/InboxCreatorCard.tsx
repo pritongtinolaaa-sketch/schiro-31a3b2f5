@@ -46,6 +46,7 @@ export default function InboxCreatorCard(props: {
     onCopy,
     onClear,
     onGoToInbox,
+    getDomainNote,
   } = props;
 
   const hasInbox = Boolean(address);
