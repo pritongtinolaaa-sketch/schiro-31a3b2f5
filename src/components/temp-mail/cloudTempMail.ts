@@ -18,6 +18,7 @@ type CreateInboxResponse = {
 type ListMessagesResponse = {
   messages: TempMailMessage[];
   expiresAt: string;
+};
 
 export type OwnedInbox = {
   address: string;
