@@ -333,6 +333,13 @@ export default function TempMailApp() {
     }
   };
 
+  const handleClaimedAddressSelect = async (nextAddress: string) => {
+    setSelectedClaimedAddress(nextAddress);
+    const nextInbox = ownedInboxes.find((inbox) => inbox.address === nextAddress);
+    if (!nextInbox) return;
+    await openClaimedInbox(nextInbox);
+  };
+
   const ensureInbox = async () => {
     setLoadingInbox(true);
     try {
