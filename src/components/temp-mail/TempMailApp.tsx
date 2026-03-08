@@ -743,7 +743,7 @@ export default function TempMailApp() {
                           </Button>
                           <Button
                             asChild
-                            variant="secondary"
+                            variant="hero"
                             className="w-full justify-start shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
                           >
                             <a href="https://schiropaste.lovable.app" target="_blank" rel="noopener noreferrer">
