@@ -389,7 +389,9 @@ export default function TempMailApp() {
   };
 
   const isLoggedIn = Boolean(session);
-  const profileLabel = profileName ?? user?.email?.split("@")[0] ?? "Profile";
+  const profileLabel =
+    profileName ??
+    String(user?.user_metadata?.username ?? user?.user_metadata?.display_name ?? user?.email?.split("@")[0] ?? "Profile");
 
   return (
     <div className="min-h-screen">
