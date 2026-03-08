@@ -21,15 +21,39 @@ type ListMessagesResponse = {
 };
 
 const STORAGE_KEY = "temp_mail_inbox_v1";
+const HISTORY_KEY = "temp_mail_inbox_history_v1";
 
-export function loadSavedInbox(): { address: string; token: string; expiresAt: string } | null {
+type SavedInbox = { address: string; token: string; expiresAt: string };
+
+function readInboxHistory(): Record<string, Omit<SavedInbox, "address">> {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, Omit<SavedInbox, "address">>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeInboxHistory(history: Record<string, Omit<SavedInbox, "address">>) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+export function getKnownInboxToken(address: string): string | null {
+  const history = readInboxHistory();
+  const known = history[address];
+  if (!known?.token) return null;
+  return known.token;
+}
+
+export function loadSavedInbox(): SavedInbox | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { address: string; token: string; expiresAt: string };
+    const parsed = JSON.parse(raw) as SavedInbox;
     if (!parsed?.address || !parsed?.token || !parsed?.expiresAt) return null;
 
-    // If expired, ignore.
     if (Date.parse(parsed.expiresAt) <= Date.now()) return null;
     return parsed;
   } catch {
@@ -37,8 +61,11 @@ export function loadSavedInbox(): { address: string; token: string; expiresAt: s
   }
 }
 
-export function saveInbox(input: { address: string; token: string; expiresAt: string }) {
+export function saveInbox(input: SavedInbox) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(input));
+  const history = readInboxHistory();
+  history[input.address] = { token: input.token, expiresAt: input.expiresAt };
+  writeInboxHistory(history);
 }
 
 export function clearSavedInbox() {
