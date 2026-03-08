@@ -71,7 +71,12 @@ async function isAllowedDomain(input: unknown, supabase: any, requesterUserId: s
   if (!domain) return false;
   if (BLOCKED_DOMAINS.has(domain)) return false;
 
-  if ((LOCAL_DOMAINS as readonly string[]).includes(domain) || (CATCHMAIL_DOMAINS as readonly string[]).includes(domain)) return true;
+  if (
+    (LOCAL_DOMAINS as readonly string[]).includes(domain) ||
+    (CATCHMAIL_DOMAINS as readonly string[]).includes(domain) ||
+    (MAILSAC_DOMAINS as readonly string[]).includes(domain)
+  )
+    return true;
 
   const [mailTmDomains, owned] = await Promise.all([
     fetchMailTmDomains(),
