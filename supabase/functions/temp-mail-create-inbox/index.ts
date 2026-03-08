@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
 
     try {
       const body = await req.json().catch(() => ({}));
-      if (await isAllowedDomain(body?.domain)) chosenDomain = body.domain;
+      if (await isAllowedDomain(body?.domain, supabase, requesterUserId)) chosenDomain = String(body.domain).trim().toLowerCase();
       if (typeof body?.localPart === "string") chosenLocalPart = body.localPart.trim() || null;
       if (typeof body?.reclaimToken === "string") reclaimToken = body.reclaimToken.trim() || null;
     } catch {
