@@ -721,9 +721,10 @@ export default function TempMailApp() {
                 <Button variant="glass" onClick={copyAddress} disabled={!address}>
                   <Copy /> Copy address
                 </Button>
-                <Button variant="secondary" onClick={() => void refreshMessages()} disabled={loadingMessages || !address}>
+                <Button variant="secondary" onClick={handleManualRefresh} disabled={loadingMessages || !address}>
                   Refresh
                 </Button>
+                <span className="text-xs text-muted-foreground">Auto-refresh: {address && token ? `${refreshCountdown}s` : "—"}</span>
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3 text-sm text-muted-foreground">
