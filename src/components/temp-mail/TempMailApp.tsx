@@ -365,6 +365,19 @@ export default function TempMailApp() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setAuthLoading(true);
+    try {
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (error) throw error;
+    } catch (e: any) {
+      toast.error("Google sign-in failed", { description: e?.message ?? "Please try again." });
+      setAuthLoading(false);
+    }
+  };
+
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
