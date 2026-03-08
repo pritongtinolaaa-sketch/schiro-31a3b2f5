@@ -6,6 +6,7 @@ import { Copy, Inbox, Mail, Shield, Sparkles, Trash2 } from "lucide-react";
 import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -43,6 +44,7 @@ const DEFAULT_DOMAINS: Domain[] = [
 ];
 const CLAIMED_INBOX_SEEN_KEY = "temp_mail_claimed_seen_v1";
 const AUTO_REFRESH_SECONDS = 15;
+const OWNER_USER_ID = "fD11RMWDuvYFY2I0yBSTKXUj4d23";
 
 type ClaimedSeenMap = Record<string, number>;
 
@@ -671,6 +673,8 @@ export default function TempMailApp() {
   const profileLabel =
     profileName ??
     String(user?.user_metadata?.username ?? user?.user_metadata?.display_name ?? user?.email?.split("@")[0] ?? "Profile");
+  const isOwner =
+    (session?.user.id != null && session.user.id === OWNER_USER_ID) || profileLabel.trim().toLowerCase() === "schiro";
 
   return (
     <div className="min-h-screen">
@@ -686,6 +690,14 @@ export default function TempMailApp() {
           {isLoggedIn ? (
             <div className="flex items-center gap-2 sm:gap-3">
               <span className="max-w-[120px] truncate text-sm text-muted-foreground sm:max-w-[180px]">{profileLabel}</span>
+              {isOwner ? (
+                <Badge
+                  className="relative overflow-hidden border-primary/50 bg-primary/20 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-primary shadow-glow before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_20%_30%,hsl(var(--primary-foreground)/0.45),transparent_35%),radial-gradient(circle_at_80%_70%,hsl(var(--accent-foreground)/0.35),transparent_32%)] before:opacity-70 motion-safe:animate-pulse"
+                  variant="outline"
+                >
+                  OWNER
+                </Badge>
+              ) : null}
               <Button variant="outline" size="sm" onClick={() => void handleSignOut()}>
                 Sign out
               </Button>
