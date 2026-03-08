@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
     const localOnly = LOCAL_DOMAINS.filter((d) => !ownedSet.has(d.toLowerCase()));
 
     const externalOnly = Array.from(new Set(external))
-      .filter((domain) => !localSet.has(domain) && !ownedSet.has(domain))
+      .filter((domain) => !localSet.has(domain) && !ownedSet.has(domain) && !BLOCKED_DOMAINS.has(domain))
       .sort((a, b) => a.localeCompare(b));
 
     const domains = [...ownedDomains, ...localOnly, ...externalOnly];

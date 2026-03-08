@@ -67,6 +67,7 @@ async function isAllowedDomain(input: unknown, supabase: any, requesterUserId: s
   if (typeof input !== "string") return false;
   const domain = input.trim().toLowerCase();
   if (!domain) return false;
+  if (BLOCKED_DOMAINS.has(domain)) return false;
 
   if ((LOCAL_DOMAINS as readonly string[]).includes(domain)) return true;
 
@@ -75,7 +76,7 @@ async function isAllowedDomain(input: unknown, supabase: any, requesterUserId: s
     isOwnedDomain(supabase, requesterUserId, domain),
   ]);
 
-  if (owned) return true;
+  if (owned) return !BLOCKED_DOMAINS.has(domain);
   return mailTmDomains.includes(domain);
 }
 
