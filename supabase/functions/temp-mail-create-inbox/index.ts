@@ -56,23 +56,25 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const authHeader = req.headers.get("Authorization");
-    let isAuthenticatedUser = false;
+    let requesterUserId: string | null = null;
 
     if (authHeader) {
       const authClient = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: authHeader } },
       });
-      const { data: authData } = await authClient.auth.getUser();
-      isAuthenticatedUser = Boolean(authData.user);
+      const { data } = await authClient.auth.getUser();
+      requesterUserId = data.user?.id ?? null;
     }
 
     let chosenDomain: Domain | null = null;
     let chosenLocalPart: string | null = null;
+    let reclaimToken: string | null = null;
 
     try {
       const body = await req.json().catch(() => ({}));
       if (isAllowedDomain(body?.domain)) chosenDomain = body.domain;
       if (typeof body?.localPart === "string") chosenLocalPart = body.localPart.trim() || null;
+      if (typeof body?.reclaimToken === "string") reclaimToken = body.reclaimToken.trim() || null;
     } catch {
       // ignore
     }
@@ -84,7 +86,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Allow user-chosen name with safe chars.
     if (chosenLocalPart) {
       const ok = /^[a-z0-9][a-z0-9._-]{1,30}[a-z0-9]$/i.test(chosenLocalPart);
       if (!ok) {
@@ -101,20 +102,85 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Try a few times to avoid unique collisions.
     for (let i = 0; i < 5; i++) {
-      const domain = chosenDomain;
       const localPart = chosenLocalPart ?? randomLocalPart();
-      const address = `${localPart}@${domain}`;
+      const address = `${localPart}@${chosenDomain}`;
+
+      const { data: existing, error: existingError } = await supabase
+        .from("temp_mail_inboxes")
+        .select("id, token_hash, owner_profile_id")
+        .eq("email_address", address)
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+
+      if (existing) {
+        if (!chosenLocalPart) {
+          continue;
+        }
+
+        if (existing.owner_profile_id) {
+          if (requesterUserId !== existing.owner_profile_id) {
+            return new Response(JSON.stringify({ error: "That email is reserved by an account" }), {
+              status: 409,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        } else {
+          if (requesterUserId) {
+            return new Response(JSON.stringify({ error: "That email is already taken" }), {
+              status: 409,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          if (!reclaimToken) {
+            return new Response(JSON.stringify({ error: "That email was used before. Reclaim token required." }), {
+              status: 409,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          const reclaimHash = await sha256Base64Url(reclaimToken);
+          if (reclaimHash !== existing.token_hash) {
+            return new Response(JSON.stringify({ error: "That email is already taken" }), {
+              status: 409,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        }
+
+        const token = randomToken();
+        const tokenHash = await sha256Base64Url(token);
+        const updatePayload: Record<string, string | null> = {
+          token_hash: tokenHash,
+          expires_at: requesterUserId ? "9999-12-31T23:59:59Z" : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          owner_profile_id: requesterUserId,
+        };
+
+        const { data, error } = await supabase
+          .from("temp_mail_inboxes")
+          .update(updatePayload)
+          .eq("id", existing.id)
+          .select("email_address, expires_at")
+          .single();
+
+        if (error) throw error;
+
+        return new Response(JSON.stringify({ address: data.email_address, token, expiresAt: data.expires_at }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const token = randomToken();
       const tokenHash = await sha256Base64Url(token);
-
       const insertPayload: Record<string, string> = {
         email_address: address,
         token_hash: tokenHash,
       };
 
-      if (isAuthenticatedUser) {
+      if (requesterUserId) {
+        insertPayload.owner_profile_id = requesterUserId;
         insertPayload.expires_at = "9999-12-31T23:59:59Z";
       }
 
@@ -130,7 +196,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // If collision, retry; otherwise bubble up.
       if (!(String(error?.code) === "23505")) throw error;
     }
 

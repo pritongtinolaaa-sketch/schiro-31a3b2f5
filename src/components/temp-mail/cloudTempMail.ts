@@ -72,9 +72,13 @@ export function clearSavedInbox() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-export async function createInbox(input?: { domain?: string; localPart?: string }): Promise<CreateInboxResponse> {
+export async function createInbox(input?: {
+  domain?: string;
+  localPart?: string;
+  reclaimToken?: string;
+}): Promise<CreateInboxResponse> {
   const { data, error } = await supabase.functions.invoke<CreateInboxResponse>("temp-mail-create-inbox", {
-    body: { domain: input?.domain, localPart: input?.localPart },
+    body: { domain: input?.domain, localPart: input?.localPart, reclaimToken: input?.reclaimToken },
   });
   if (error) throw error;
   if (!data?.address || !data?.token || !data?.expiresAt) throw new Error("Invalid response");
