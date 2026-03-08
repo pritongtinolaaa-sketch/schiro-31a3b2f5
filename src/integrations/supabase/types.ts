@@ -44,6 +44,7 @@ export type Database = {
           email_address: string
           expires_at: string
           id: string
+          owner_profile_id: string | null
           token_hash: string
         }
         Insert: {
@@ -51,6 +52,7 @@ export type Database = {
           email_address: string
           expires_at?: string
           id?: string
+          owner_profile_id?: string | null
           token_hash: string
         }
         Update: {
@@ -58,9 +60,18 @@ export type Database = {
           email_address?: string
           expires_at?: string
           id?: string
+          owner_profile_id?: string | null
           token_hash?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "temp_mail_inboxes_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       temp_mail_messages: {
         Row: {

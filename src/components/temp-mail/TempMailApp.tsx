@@ -21,6 +21,7 @@ import {
   listMessages,
   loadSavedInbox,
   saveInbox,
+  getKnownInboxToken,
   sendTestEmail,
   subscribeToInbox,
   type TempMailMessage,
@@ -266,7 +267,8 @@ export default function TempMailApp() {
       setEmails([]);
       setActiveId(null);
 
-      const created = await createInbox({ domain: selectedDomain, localPart: chosenLocalPart });
+      const reclaimToken = chosenLocalPart ? getKnownInboxToken(`${chosenLocalPart}@${selectedDomain}`) ?? undefined : undefined;
+      const created = await createInbox({ domain: selectedDomain, localPart: chosenLocalPart, reclaimToken });
       setAddress(created.address);
       setToken(created.token);
       setExpiresAt(created.expiresAt);
