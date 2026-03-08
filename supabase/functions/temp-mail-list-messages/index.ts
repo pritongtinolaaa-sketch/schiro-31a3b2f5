@@ -35,6 +35,10 @@ function isMailsacAddress(address: string) {
   return MAILSAC_DOMAINS.has(domainFromAddress(address));
 }
 
+function isInboxKittenAddress(address: string) {
+  return INBOXKITTEN_DOMAINS.has(domainFromAddress(address));
+}
+
 function getMailsacHeaders() {
   const apiKey = Deno.env.get("MAILSAC_API_KEY")?.trim();
   return apiKey ? { "Mailsac-Key": apiKey } : {};
