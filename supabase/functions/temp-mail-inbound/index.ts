@@ -164,7 +164,14 @@ function extractReadableBody(raw: string) {
 
   const { bodyRaw } = splitHeadersAndBody(normalized);
   const fallback = decodeQuotedPrintable(bodyRaw).trim();
-  return fallback || normalized.trim();
+  if (!fallback) return normalized.trim();
+
+  if (looksLikeHtml(fallback)) {
+    const text = htmlToText(fallback);
+    return text || fallback;
+  }
+
+  return fallback;
 }
 
 Deno.serve(async (req) => {
