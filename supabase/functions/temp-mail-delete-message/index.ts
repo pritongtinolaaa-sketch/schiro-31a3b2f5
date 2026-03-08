@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 const CATCHMAIL_DOMAINS = new Set(["catchmail.io", "mailistry.com", "zeppost.com"]);
+const MAILSAC_DOMAINS = new Set(["mailsac.com"]);
 
 function base64Url(bytes: Uint8Array) {
   const str = btoa(String.fromCharCode(...bytes));
@@ -29,6 +30,15 @@ function isCatchmailAddress(address: string) {
   return CATCHMAIL_DOMAINS.has(domainFromAddress(address));
 }
 
+function isMailsacAddress(address: string) {
+  return MAILSAC_DOMAINS.has(domainFromAddress(address));
+}
+
+function getMailsacHeaders() {
+  const apiKey = Deno.env.get("MAILSAC_API_KEY")?.trim();
+  return apiKey ? { "Mailsac-Key": apiKey } : {};
+}
+
 async function deleteCatchmailMessage(address: string, messageId: string) {
   const url = `https://api.catchmail.io/api/v1/message/${encodeURIComponent(messageId)}?mailbox=${encodeURIComponent(address)}`;
   const response = await fetch(url, { method: "DELETE" });
@@ -36,6 +46,16 @@ async function deleteCatchmailMessage(address: string, messageId: string) {
   if (!response.ok && response.status !== 204) {
     const details = await response.text().catch(() => "");
     throw new Error(`CatchMail delete failed (${response.status}): ${details || "unknown error"}`);
+  }
+}
+
+async function deleteMailsacMessage(address: string, messageId: string) {
+  const url = `https://mailsac.com/api/addresses/${encodeURIComponent(address)}/messages/${encodeURIComponent(messageId)}`;
+  const response = await fetch(url, { method: "DELETE", headers: getMailsacHeaders() });
+
+  if (!response.ok && response.status !== 204) {
+    const details = await response.text().catch(() => "");
+    throw new Error(`Mailsac delete failed (${response.status}): ${details || "unknown error"}`);
   }
 }
 
@@ -81,6 +101,8 @@ Deno.serve(async (req) => {
 
     if (isCatchmailAddress(String(address))) {
       await deleteCatchmailMessage(String(address), String(messageId));
+    } else if (isMailsacAddress(String(address))) {
+      await deleteMailsacMessage(String(address), String(messageId));
     } else {
       const { error: delError } = await supabase
         .from("temp_mail_messages")

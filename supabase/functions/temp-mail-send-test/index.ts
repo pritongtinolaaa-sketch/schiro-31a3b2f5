@@ -34,14 +34,16 @@ async function broadcastNewMail(opts: { supabaseUrl: string; serviceKey: string;
 }
 
 const CATCHMAIL_DOMAINS = new Set(["catchmail.io", "mailistry.com", "zeppost.com"]);
+const MAILSAC_DOMAINS = new Set(["mailsac.com"]);
 
 function domainFromAddress(address: string): string {
   const at = address.lastIndexOf("@");
   return at === -1 ? "" : address.slice(at + 1).trim().toLowerCase();
 }
 
-function isCatchmailAddress(address: string) {
-  return CATCHMAIL_DOMAINS.has(domainFromAddress(address));
+function isExternalProviderAddress(address: string) {
+  const domain = domainFromAddress(address);
+  return CATCHMAIL_DOMAINS.has(domain) || MAILSAC_DOMAINS.has(domain);
 }
 
 function makeDemoEmail() {
@@ -99,8 +101,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (isCatchmailAddress(String(address))) {
-      return new Response(JSON.stringify({ error: "Send test is only available for built-in domains. Send a real email to this CatchMail address to test delivery." }), {
+    if (isExternalProviderAddress(String(address))) {
+      return new Response(JSON.stringify({ error: "Send test is only available for built-in domains. Send a real email to this external mailbox address to test delivery." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

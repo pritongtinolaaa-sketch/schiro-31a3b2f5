@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 const CATCHMAIL_DOMAINS = new Set(["catchmail.io", "mailistry.com", "zeppost.com"]);
+const MAILSAC_DOMAINS = new Set(["mailsac.com"]);
 
 function base64Url(bytes: Uint8Array) {
   const str = btoa(String.fromCharCode(...bytes));
@@ -27,6 +28,15 @@ function domainFromAddress(address: string): string {
 
 function isCatchmailAddress(address: string) {
   return CATCHMAIL_DOMAINS.has(domainFromAddress(address));
+}
+
+function isMailsacAddress(address: string) {
+  return MAILSAC_DOMAINS.has(domainFromAddress(address));
+}
+
+function getMailsacHeaders() {
+  const apiKey = Deno.env.get("MAILSAC_API_KEY")?.trim();
+  return apiKey ? { "Mailsac-Key": apiKey } : {};
 }
 
 function toMessageRow(row: any) {
@@ -58,6 +68,23 @@ function toCatchmailMessageRow(row: any) {
   };
 }
 
+function toMailsacMessageRow(address: string, row: any) {
+  const dateInput = String(row?.received ?? row?.receivedAt ?? row?.created_at ?? row?.createdAt ?? "");
+  const parsedTs = Date.parse(dateInput);
+  const fromAddress =
+    String(row?.from?.[0]?.address ?? row?.from?.address ?? row?.from ?? row?.sender ?? "unknown@sender") || "unknown@sender";
+  const snippet = String(row?.snippet ?? row?.subject ?? "").trim();
+
+  return {
+    id: String(row?._id ?? row?.id ?? crypto.randomUUID()),
+    from: fromAddress,
+    subject: String(row?.subject ?? "(no subject)"),
+    preview: snippet || "No preview available",
+    receivedAt: Number.isFinite(parsedTs) ? parsedTs : Date.now(),
+    body: snippet || `Open https://mailsac.com/inbox/${encodeURIComponent(address)} to view full content.`,
+  };
+}
+
 async function listCatchmailMessages(address: string) {
   const url = `https://api.catchmail.io/api/v1/mailbox?address=${encodeURIComponent(address)}&page=1&page_size=100`;
   const response = await fetch(url, { method: "GET" });
@@ -71,6 +98,21 @@ async function listCatchmailMessages(address: string) {
   const rows = Array.isArray(payload?.messages) ? payload.messages : [];
 
   return rows.map(toCatchmailMessageRow).sort((a, b) => b.receivedAt - a.receivedAt);
+}
+
+async function listMailsacMessages(address: string) {
+  const url = `https://mailsac.com/api/addresses/${encodeURIComponent(address)}/messages`;
+  const response = await fetch(url, { method: "GET", headers: getMailsacHeaders() });
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    throw new Error(`Mailsac mailbox lookup failed (${response.status}): ${details || "unknown error"}`);
+  }
+
+  const rows = await response.json().catch(() => []);
+  if (!Array.isArray(rows)) return [];
+
+  return rows.map((row: any) => toMailsacMessageRow(address, row)).sort((a, b) => b.receivedAt - a.receivedAt);
 }
 
 Deno.serve(async (req) => {
@@ -115,6 +157,13 @@ Deno.serve(async (req) => {
 
     if (isCatchmailAddress(String(address))) {
       const messages = await listCatchmailMessages(String(address));
+      return new Response(JSON.stringify({ messages, expiresAt: inbox.expires_at }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (isMailsacAddress(String(address))) {
+      const messages = await listMailsacMessages(String(address));
       return new Response(JSON.stringify({ messages, expiresAt: inbox.expires_at }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
