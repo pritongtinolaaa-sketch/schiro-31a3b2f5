@@ -217,8 +217,8 @@ export default function TempMailApp() {
     }
   }, [user]);
 
-  const openClaimedInbox = async (claimedAddress: string) => {
-    const [claimedLocalPart, claimedDomain] = claimedAddress.split("@");
+  const openClaimedInbox = async (claimedInbox: OwnedInbox) => {
+    const [claimedLocalPart, claimedDomain] = claimedInbox.address.split("@");
     if (!claimedLocalPart || !claimedDomain || !(DOMAINS as readonly string[]).includes(claimedDomain)) {
       toast.error("Invalid claimed address", { description: "That address can't be opened." });
       return;
@@ -236,11 +236,50 @@ export default function TempMailApp() {
       setEmails(res.messages);
       setExpiresAt(res.expiresAt);
       setActiveId(res.messages[0]?.id ?? null);
+
+      const seenTs = claimedInbox.latestReceivedAt ? Date.parse(claimedInbox.latestReceivedAt) : Date.now();
+      setClaimedSeenMap((prev) => {
+        const next = { ...prev, [created.address]: seenTs };
+        writeClaimedSeenMap(next);
+        return next;
+      });
+
       toast.success("Claimed inbox opened", { description: created.address });
     } catch (e: any) {
       toast.error("Couldn't open claimed inbox", { description: e?.message ?? "Please try again." });
     } finally {
       setLoadingInbox(false);
+    }
+  };
+
+  const handleDeleteOwnedInbox = async (claimedAddress: string) => {
+    setDeletingOwnedAddress(claimedAddress);
+    try {
+      await deleteOwnedInbox({ address: claimedAddress });
+
+      if (address === claimedAddress) {
+        clearSavedInbox();
+        setAddress(null);
+        setToken(null);
+        setExpiresAt(null);
+        setEmails([]);
+        setActiveId(null);
+      }
+
+      setClaimedSeenMap((prev) => {
+        if (!(claimedAddress in prev)) return prev;
+        const next = { ...prev };
+        delete next[claimedAddress];
+        writeClaimedSeenMap(next);
+        return next;
+      });
+
+      await refreshOwnedInboxes();
+      toast.success("Claimed address deleted", { description: claimedAddress });
+    } catch (e: any) {
+      toast.error("Couldn't delete claimed address", { description: e?.message ?? "Please try again." });
+    } finally {
+      setDeletingOwnedAddress(null);
     }
   };
 
