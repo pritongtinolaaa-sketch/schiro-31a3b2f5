@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import InboxCreatorCard, { type Domain } from "@/components/temp-mail/InboxCreatorCard";
@@ -720,11 +721,32 @@ export default function TempMailApp() {
                 <div className="rounded-lg border bg-background/60 p-3 text-xs text-muted-foreground">
                   Tip: Create an email first, then press “Receive” to deliver a real test message.
                 </div>
-                <Button asChild variant="hero" size="lg" className="mt-2 w-full text-sm font-semibold tracking-wide">
-                  <a href="https://schiro.eu.cc" target="_blank" rel="noopener noreferrer">
-                    Check out my other Netflix Cookie Checker site
-                  </a>
-                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="hero" size="lg" className="mt-2 w-full text-sm font-semibold tracking-wide">
+                      Check out my other sites
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[22rem] p-0" align="start">
+                    <Card className="border-0 shadow-none">
+                      <div className="space-y-3 p-4">
+                        <div className="text-sm font-semibold">Visit my other projects</div>
+                        <div className="grid gap-2">
+                          <Button asChild variant="hero" className="w-full justify-start">
+                            <a href="https://schiro.eu.cc" target="_blank" rel="noopener noreferrer">
+                              Netflix Cookie Checker
+                            </a>
+                          </Button>
+                          <Button asChild variant="secondary" className="w-full justify-start">
+                            <a href="https://schiropaste.lovable.app" target="_blank" rel="noopener noreferrer">
+                              Schiropaste - Paste and share
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
