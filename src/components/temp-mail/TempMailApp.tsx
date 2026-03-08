@@ -533,7 +533,7 @@ export default function TempMailApp() {
   };
 
   const clearInbox = async () => {
-    const targetDomain = selectedDomain ?? (address ? domainFromAddress(address) : null);
+    const targetDomain = selectedDomain ?? (address ? domainFromAddress(address, availableDomains) : null);
     if (!targetDomain) {
       toast.error("Select a domain first", { description: "Pick a domain, then clear to generate a random email." });
       return;
