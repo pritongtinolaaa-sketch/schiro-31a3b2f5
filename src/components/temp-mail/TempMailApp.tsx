@@ -680,7 +680,7 @@ export default function TempMailApp() {
         <div className="pointer-events-none absolute inset-0 opacity-70" />
         <div className="container max-w-6xl relative py-8 md:py-10">
           <div className="grid gap-6 md:grid-cols-12 md:items-start">
-            <div className="md:col-span-7 relative md:pb-16">
+            <div className="md:col-span-7 relative md:pb-24">
               <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow-elev">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Real inbox • persisted • realtime updates</span>
