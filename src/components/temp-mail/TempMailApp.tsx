@@ -154,11 +154,22 @@ export default function TempMailApp() {
   }, []);
 
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, currentSession) => {
       setSession(currentSession);
       const nextUser = currentSession?.user ?? null;
       setUser(nextUser);
       setAuthReady(true);
+
+      if (event === "SIGNED_OUT") {
+        clearSavedInbox();
+        setAddress(null);
+        setToken(null);
+        setExpiresAt(null);
+        setEmails([]);
+        setActiveId(null);
+        setLocalPart("");
+      }
+
       if (nextUser) {
         void loadProfile(nextUser.id);
       } else {
