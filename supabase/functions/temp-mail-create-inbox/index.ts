@@ -39,12 +39,10 @@ async function fetchMailTmDomains(): Promise<string[]> {
 }
 
 function randomLocalPart() {
-  const adjectives = ["quiet", "mint", "rapid", "paper", "neon", "civic", "lunar", "pixel", "soft", "delta"];
-  const nouns = ["fox", "relay", "atlas", "spark", "window", "signal", "orbit", "thread", "vault", "kite"];
-  const a = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const n = nouns[Math.floor(Math.random() * nouns.length)];
+  const words = ["quiet", "mint", "rapid", "paper", "neon", "civic", "lunar", "pixel", "soft", "delta", "fox", "relay", "atlas", "spark", "window", "signal", "orbit", "thread", "vault", "kite"];
+  const word = words[Math.floor(Math.random() * words.length)];
   const num = String(Math.floor(Math.random() * 9000) + 1000);
-  return `${a}.${n}${num}`;
+  return `${word}${num}`;
 }
 
 async function isOwnedDomain(supabase: any, requesterUserId: string | null, domain: string): Promise<boolean> {
