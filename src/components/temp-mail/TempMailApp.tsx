@@ -324,6 +324,15 @@ export default function TempMailApp() {
     }
   };
 
+  const copyClaimedAddress = async (claimedAddress: string) => {
+    try {
+      await navigator.clipboard.writeText(claimedAddress);
+      toast.success("Copied address", { description: claimedAddress });
+    } catch {
+      toast.error("Couldn't copy", { description: "Your browser blocked clipboard access." });
+    }
+  };
+
   const ensureInbox = async () => {
     setLoadingInbox(true);
     try {
