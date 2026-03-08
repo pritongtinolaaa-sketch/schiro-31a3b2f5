@@ -247,15 +247,34 @@ export default function TempMailApp() {
   };
 
   const clearInbox = async () => {
-    if (!address || !token) return;
+    const targetDomain = selectedDomain ?? (address ? domainFromAddress(address) : null);
+    if (!targetDomain) {
+      toast.error("Select a domain first", { description: "Pick a domain, then clear to generate a random email." });
+      return;
+    }
 
+    setLoadingInbox(true);
     try {
-      await clearInboxRemote({ address, token });
-      toast("Inbox cleared");
+      if (address && token) {
+        await clearInboxRemote({ address, token });
+      }
+
+      clearSavedInbox();
       setEmails([]);
       setActiveId(null);
+
+      const created = await createInbox({ domain: targetDomain });
+      setAddress(created.address);
+      setToken(created.token);
+      setExpiresAt(created.expiresAt);
+      saveInbox(created);
+      setLocalPart("");
+
+      toast.success("Random email generated", { description: created.address });
     } catch (e: any) {
-      toast.error("Couldn't clear", { description: e?.message ?? "Please try again." });
+      toast.error("Couldn't regenerate email", { description: e?.message ?? "Please try again." });
+    } finally {
+      setLoadingInbox(false);
     }
   };
 
