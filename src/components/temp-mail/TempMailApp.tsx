@@ -164,6 +164,13 @@ function domainFromAddress(address: string, domains: readonly string[]): Domain 
   return domains.includes(d) ? d : null;
 }
 
+function isUnauthorizedError(error: unknown) {
+  const anyError = error as { message?: string; status?: number; context?: { status?: number } };
+  const status = Number(anyError?.context?.status ?? anyError?.status);
+  if (status === 401) return true;
+  return /\b401\b|unauthorized/i.test(String(anyError?.message ?? ""));
+}
+
 export default function TempMailApp() {
   const prefersReducedMotion = usePrefersReducedMotion();
 
