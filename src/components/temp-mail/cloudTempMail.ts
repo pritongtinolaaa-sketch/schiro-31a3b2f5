@@ -79,13 +79,24 @@ export function clearSavedInbox() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
+async function getFunctionAuthHeaders() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const accessToken = session?.access_token?.trim();
+  return accessToken ? { Authorization: `Bearer ${accessToken}` } : null;
+}
+
 export async function createInbox(input?: {
   domain?: string;
   localPart?: string;
   reclaimToken?: string;
 }): Promise<CreateInboxResponse> {
+  const headers = await getFunctionAuthHeaders();
   const { data, error } = await supabase.functions.invoke<CreateInboxResponse>("temp-mail-create-inbox", {
     body: { domain: input?.domain, localPart: input?.localPart, reclaimToken: input?.reclaimToken },
+    ...(headers ? { headers } : {}),
   });
   if (error) throw error;
   if (!data?.address || !data?.token || !data?.expiresAt) throw new Error("Invalid response");
