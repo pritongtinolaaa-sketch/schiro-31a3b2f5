@@ -484,20 +484,51 @@ Deno.serve(async (req) => {
       });
     }
 
+    const normalizedAddress = String(address).trim().toLowerCase();
+    const normalizedToken = String(token).trim();
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const tokenHash = await sha256Base64Url(String(token));
+    const tokenHash = await sha256Base64Url(normalizedToken);
 
-    const { data: inbox, error: inboxError } = await supabase
+    let { data: inbox, error: inboxError } = await supabase
       .from("temp_mail_inboxes")
-      .select("id, expires_at")
-      .eq("email_address", String(address))
+      .select("id, expires_at, owner_profile_id")
+      .ilike("email_address", normalizedAddress)
       .eq("token_hash", tokenHash)
       .maybeSingle();
 
     if (inboxError) throw inboxError;
+
+    if (!inbox) {
+      const authHeader = req.headers.get("Authorization");
+      const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+
+      if (bearerToken && anonKey) {
+        const authClient = createClient(supabaseUrl, anonKey, {
+          global: { headers: { Authorization: authHeader as string } },
+        });
+
+        const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(bearerToken);
+        const requesterUserId = claimsError ? null : String(claimsData?.claims?.sub ?? "").trim() || null;
+
+        if (requesterUserId) {
+          const { data: ownerInbox, error: ownerInboxError } = await supabase
+            .from("temp_mail_inboxes")
+            .select("id, expires_at, owner_profile_id")
+            .ilike("email_address", normalizedAddress)
+            .eq("owner_profile_id", requesterUserId)
+            .maybeSingle();
+
+          if (ownerInboxError) throw ownerInboxError;
+          inbox = ownerInbox;
+        }
+      }
+    }
+
     if (!inbox) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -512,22 +543,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (isCatchmailAddress(String(address))) {
-      const messages = await listCatchmailMessages(String(address));
+    if (isCatchmailAddress(normalizedAddress)) {
+      const messages = await listCatchmailMessages(normalizedAddress);
       return new Response(JSON.stringify({ messages, expiresAt: inbox.expires_at }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    if (isMailsacAddress(String(address))) {
-      const messages = await listMailsacMessages(String(address));
+    if (isMailsacAddress(normalizedAddress)) {
+      const messages = await listMailsacMessages(normalizedAddress);
       return new Response(JSON.stringify({ messages, expiresAt: inbox.expires_at }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    if (isInboxKittenAddress(String(address))) {
-      const messages = await listInboxKittenMessages(String(address));
+    if (isInboxKittenAddress(normalizedAddress)) {
+      const messages = await listInboxKittenMessages(normalizedAddress);
       return new Response(JSON.stringify({ messages, expiresAt: inbox.expires_at }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
