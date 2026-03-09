@@ -751,9 +751,9 @@ export default function TempMailApp() {
     (session?.user.id != null && session.user.id === OWNER_USER_ID) || profileLabel.trim().toLowerCase() === "schiro";
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       <nav className="sticky top-0 z-50 border-b bg-background/85 backdrop-blur-md">
-        <div className="container max-w-6xl flex h-14 items-center justify-between">
+        <div className="container max-w-6xl flex min-h-14 flex-wrap items-center justify-between gap-2 px-3 py-2 sm:flex-nowrap sm:gap-3 sm:px-8 sm:py-0">
           <div className="inline-flex items-center gap-2">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <Mail className="h-4 w-4" />
@@ -762,11 +762,11 @@ export default function TempMailApp() {
           </div>
 
           {isLoggedIn ? (
-            <div className="flex items-center gap-2 sm:gap-3">
-              <span className="max-w-[120px] truncate text-sm text-muted-foreground sm:max-w-[180px]">{profileLabel}</span>
+            <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-1.5 sm:w-auto sm:gap-3">
+              <span className="max-w-[96px] truncate text-sm text-muted-foreground sm:max-w-[180px]">{profileLabel}</span>
               {isOwner ? (
                 <Badge
-                  className="relative overflow-hidden border-primary bg-primary/30 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.95),0_0_18px_hsl(var(--primary)/0.95),0_0_38px_hsl(var(--primary)/0.9),0_0_64px_hsl(var(--primary)/0.7)] before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(120deg,transparent_0%,hsl(var(--primary-foreground)/0.35)_38%,transparent_62%),radial-gradient(circle_at_20%_30%,hsl(var(--primary-foreground)/0.58),transparent_35%),radial-gradient(circle_at_80%_70%,hsl(var(--accent-foreground)/0.48),transparent_32%)] before:opacity-95 before:mix-blend-screen motion-safe:animate-pulse"
+                  className="relative hidden overflow-hidden border-primary bg-primary/30 px-2.5 py-1 text-[10px] font-bold tracking-[0.16em] text-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.95),0_0_18px_hsl(var(--primary)/0.95),0_0_38px_hsl(var(--primary)/0.9),0_0_64px_hsl(var(--primary)/0.7)] before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(120deg,transparent_0%,hsl(var(--primary-foreground)/0.35)_38%,transparent_62%),radial-gradient(circle_at_20%_30%,hsl(var(--primary-foreground)/0.58),transparent_35%),radial-gradient(circle_at_80%_70%,hsl(var(--accent-foreground)/0.48),transparent_32%)] before:opacity-95 before:mix-blend-screen motion-safe:animate-pulse max-[380px]:hidden sm:inline-flex"
                   variant="outline"
                 >
                   OWNER
@@ -786,7 +786,7 @@ export default function TempMailApp() {
 
       <header ref={heroRef} className="relative overflow-hidden border-b bg-hero">
         <div className="pointer-events-none absolute inset-0 opacity-70" />
-        <div className="container max-w-6xl relative py-8 md:py-10">
+        <div className="container relative max-w-6xl px-3 py-8 sm:px-8 md:py-10">
           <div className="grid gap-6 md:grid-cols-12 md:items-start">
             <div className="md:col-span-7 relative md:pb-24">
               <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground shadow-elev">
@@ -834,7 +834,7 @@ export default function TempMailApp() {
                       Check out my other sites
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[22rem] p-0" align="center">
+                  <PopoverContent className="w-[min(22rem,calc(100vw-1.5rem))] p-0" align="center">
                     <Card className="border-0 shadow-none">
                       <div className="space-y-3 p-4">
                         <div className="text-sm font-semibold">Visit my other projects</div>
@@ -842,7 +842,7 @@ export default function TempMailApp() {
                           <Button
                             asChild
                             variant="hero"
-                            className="w-full justify-start shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
+                            className="w-full justify-start whitespace-normal break-words text-left shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
                           >
                             <a href="https://schiro.eu.cc" target="_blank" rel="noopener noreferrer">
                               Schiro Cookie Checker - Netflix Checker
@@ -851,7 +851,7 @@ export default function TempMailApp() {
                           <Button
                             asChild
                             variant="hero"
-                            className="w-full justify-start shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
+                            className="w-full justify-start whitespace-normal break-words text-left shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
                           >
                             <a href="https://schiropaste.lovable.app" target="_blank" rel="noopener noreferrer">
                               Schiropaste - Paste and Share
@@ -887,7 +887,7 @@ export default function TempMailApp() {
         </div>
       </header>
 
-      <main className="container max-w-6xl py-6 md:py-8">
+      <main className="container max-w-6xl px-3 py-6 sm:px-8 md:py-8">
         {isLoggedIn ? (
           <Card className="mb-4">
             <div className="border-b p-4">
@@ -907,7 +907,7 @@ export default function TempMailApp() {
                       onValueChange={(value) => void handleClaimedAddressSelect(value)}
                       disabled={loadingInbox || deletingOwnedAddress === selectedClaimedInbox.address}
                     >
-                      <SelectTrigger className="flex-1 text-mono">
+                      <SelectTrigger className="min-w-0 flex-1 text-mono">
                         <SelectValue placeholder="Pick claimed email" />
                       </SelectTrigger>
                       <SelectContent>
