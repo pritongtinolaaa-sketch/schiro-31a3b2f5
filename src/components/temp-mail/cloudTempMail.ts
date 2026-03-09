@@ -79,13 +79,24 @@ export function clearSavedInbox() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
+async function getFunctionAuthHeaders() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const accessToken = session?.access_token?.trim();
+  return accessToken ? { Authorization: `Bearer ${accessToken}` } : null;
+}
+
 export async function createInbox(input?: {
   domain?: string;
   localPart?: string;
   reclaimToken?: string;
 }): Promise<CreateInboxResponse> {
+  const headers = await getFunctionAuthHeaders();
   const { data, error } = await supabase.functions.invoke<CreateInboxResponse>("temp-mail-create-inbox", {
     body: { domain: input?.domain, localPart: input?.localPart, reclaimToken: input?.reclaimToken },
+    ...(headers ? { headers } : {}),
   });
   if (error) throw error;
   if (!data?.address || !data?.token || !data?.expiresAt) throw new Error("Invalid response");
@@ -179,8 +190,10 @@ function normalizeIncomingBody(body: string) {
 }
 
 export async function listMessages(input: { address: string; token: string }): Promise<ListMessagesResponse> {
+  const headers = await getFunctionAuthHeaders();
   const { data, error } = await supabase.functions.invoke<ListMessagesResponse>("temp-mail-list-messages", {
     body: input,
+    ...(headers ? { headers } : {}),
   });
   if (error) throw error;
   if (!data?.messages) throw new Error("Invalid response");
@@ -210,12 +223,19 @@ export async function clearInboxRemote(input: { address: string; token: string }
 }
 
 export async function deleteOwnedInbox(input: { address: string }) {
-  const { error } = await supabase.functions.invoke("temp-mail-delete-owned-inbox", { body: input });
+  const headers = await getFunctionAuthHeaders();
+  const { error } = await supabase.functions.invoke("temp-mail-delete-owned-inbox", {
+    body: input,
+    ...(headers ? { headers } : {}),
+  });
   if (error) throw error;
 }
 
 export async function listOwnedInboxes(): Promise<OwnedInbox[]> {
-  const { data, error } = await supabase.functions.invoke<{ inboxes: OwnedInbox[] }>("temp-mail-list-owned-inboxes");
+  const headers = await getFunctionAuthHeaders();
+  const { data, error } = await supabase.functions.invoke<{ inboxes: OwnedInbox[] }>("temp-mail-list-owned-inboxes", {
+    ...(headers ? { headers } : {}),
+  });
   if (error) throw error;
   return data?.inboxes ?? [];
 }

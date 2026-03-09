@@ -164,6 +164,13 @@ function domainFromAddress(address: string, domains: readonly string[]): Domain 
   return domains.includes(d) ? d : null;
 }
 
+function isUnauthorizedError(error: unknown) {
+  const anyError = error as { message?: string; status?: number; context?: { status?: number } };
+  const status = Number(anyError?.context?.status ?? anyError?.status);
+  if (status === 401) return true;
+  return /\b401\b|unauthorized/i.test(String(anyError?.message ?? ""));
+}
+
 export default function TempMailApp() {
   const prefersReducedMotion = usePrefersReducedMotion();
 
@@ -207,6 +214,30 @@ export default function TempMailApp() {
     () => ownedInboxes.find((inbox) => inbox.address === selectedClaimedAddress) ?? ownedInboxes[0] ?? null,
     [ownedInboxes, selectedClaimedAddress],
   );
+
+  const recoverClaimedInboxAfterUnauthorized = useCallback(async () => {
+    if (!user || !selectedClaimedInbox) return false;
+
+    const [claimedLocalPart, claimedDomain] = selectedClaimedInbox.address.split("@");
+    if (!claimedLocalPart || !claimedDomain || !availableDomains.includes(claimedDomain as Domain)) return false;
+
+    try {
+      const recreated = await createInbox({ domain: claimedDomain as Domain, localPart: claimedLocalPart });
+      setAddress(recreated.address);
+      setToken(recreated.token);
+      setExpiresAt(recreated.expiresAt);
+      setSelectedDomain(claimedDomain as Domain);
+      saveInbox(recreated);
+
+      const res = await listMessages({ address: recreated.address, token: recreated.token });
+      setEmails(res.messages);
+      setExpiresAt(res.expiresAt);
+      setActiveId(res.messages[0]?.id ?? null);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [user, selectedClaimedInbox, availableDomains]);
 
   const heroRef = useRef<HTMLDivElement | null>(null);
   const inboxSectionRef = useRef<HTMLElement | null>(null);
@@ -335,11 +366,14 @@ export default function TempMailApp() {
         return next;
       });
     } catch (e: any) {
+      if (isUnauthorizedError(e) && (await recoverClaimedInboxAfterUnauthorized())) {
+        return;
+      }
       toast.error("Couldn't load inbox", { description: e?.message ?? "Please try again." });
     } finally {
       setLoadingMessages(false);
     }
-  }, [address, token]);
+  }, [address, token, recoverClaimedInboxAfterUnauthorized]);
 
   const refreshOwnedInboxes = useCallback(async () => {
     if (!user) {
