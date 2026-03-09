@@ -1,1 +1,4 @@
 project_id = "jnetqcqmonvhkttvpvcu"
+
+[functions.temp-mail-list-messages]
+verify_jwt = false

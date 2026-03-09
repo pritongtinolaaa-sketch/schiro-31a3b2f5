@@ -504,12 +504,12 @@ Deno.serve(async (req) => {
     if (inboxError) throw inboxError;
 
     if (!inbox) {
-      const authHeader = req.headers.get("Authorization");
-      const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
 
       if (bearerToken && anonKey) {
         const authClient = createClient(supabaseUrl, anonKey, {
-          global: { headers: { Authorization: authHeader as string } },
+          global: { headers: { Authorization: `Bearer ${bearerToken}` } },
         });
 
         const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(bearerToken);
