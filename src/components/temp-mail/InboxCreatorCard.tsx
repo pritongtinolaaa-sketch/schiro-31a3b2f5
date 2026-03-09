@@ -52,7 +52,7 @@ export default function InboxCreatorCard(props: {
   const hasInbox = Boolean(address);
 
   return (
-    <Card className="glass border-border/80 shadow-elev">
+    <Card className="glass w-full min-w-0 border-border/80 shadow-elev">
       <div className="p-5 md:p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -78,7 +78,7 @@ export default function InboxCreatorCard(props: {
           </Button>
         </div>
 
-        <div className="mt-4 grid gap-2">
+        <div className="mt-4 grid gap-2 min-w-0">
           <label className="text-xs text-muted-foreground">Email name (optional)</label>
           <Input
             value={localPart}
@@ -98,7 +98,7 @@ export default function InboxCreatorCard(props: {
 
           <label className="mt-2 text-xs text-muted-foreground">Choose domain</label>
           <Select value={selectedDomain ?? undefined} onValueChange={onSelectedDomainChange} disabled={loadingInbox || domains.length === 0}>
-            <SelectTrigger className="text-mono">
+            <SelectTrigger className="w-full min-w-0 text-mono">
               <SelectValue placeholder="Select a domain" />
             </SelectTrigger>
             <SelectContent>
