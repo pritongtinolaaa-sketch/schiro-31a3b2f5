@@ -536,7 +536,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (new Date(inbox.expires_at).getTime() <= Date.now()) {
+    const isOwnedInbox = Boolean(inbox.owner_profile_id);
+    if (!isOwnedInbox && new Date(inbox.expires_at).getTime() <= Date.now()) {
       return new Response(JSON.stringify({ error: "Inbox expired" }), {
         status: 410,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
