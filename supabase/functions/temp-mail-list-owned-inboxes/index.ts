@@ -7,6 +7,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function extractBearerToken(authHeader: string | null) {
+  if (!authHeader) return null;
+  const [scheme, token] = authHeader.trim().split(/\s+/, 2);
+  if (!scheme || !token) return null;
+  return scheme.toLowerCase() === "bearer" ? token.trim() : null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -15,8 +22,8 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    const bearerToken = extractBearerToken(req.headers.get("Authorization"));
+    if (!bearerToken) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -24,14 +31,15 @@ Deno.serve(async (req) => {
     }
 
     const authClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
+      global: { headers: { Authorization: `Bearer ${bearerToken}` } },
     });
 
-    const { data: authData, error: authError } = await authClient.auth.getUser();
-    if (authError) throw authError;
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser(bearerToken);
 
-    const user = authData.user;
-    if (!user) {
+    if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

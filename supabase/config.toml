@@ -2,3 +2,6 @@ project_id = "jnetqcqmonvhkttvpvcu"
 
 [functions.temp-mail-list-messages]
 verify_jwt = false
+
+[functions.temp-mail-list-owned-inboxes]
+verify_jwt = false
