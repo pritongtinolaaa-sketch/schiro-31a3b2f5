@@ -901,13 +901,13 @@ export default function TempMailApp() {
                 <div className="text-sm text-muted-foreground">No claimed addresses yet.</div>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center">
                     <Select
                       value={selectedClaimedInbox.address}
                       onValueChange={(value) => void handleClaimedAddressSelect(value)}
                       disabled={loadingInbox || deletingOwnedAddress === selectedClaimedInbox.address}
                     >
-                      <SelectTrigger className="min-w-0 flex-1 text-mono">
+                      <SelectTrigger className="min-w-0 w-full max-w-full flex-1 text-mono">
                         <SelectValue placeholder="Pick claimed email" />
                       </SelectTrigger>
                       <SelectContent>
@@ -916,7 +916,7 @@ export default function TempMailApp() {
                           const seenTs = claimedSeenMap[inbox.address] ?? 0;
                           const hasUnread = latestReceivedAtTs > seenTs;
                           return (
-                            <SelectItem key={inbox.address} value={inbox.address} className="text-mono">
+                            <SelectItem key={inbox.address} value={inbox.address} className="max-w-[calc(100vw-3rem)] text-mono">
                               {hasUnread ? `${inbox.address} • Unread` : inbox.address}
                             </SelectItem>
                           );

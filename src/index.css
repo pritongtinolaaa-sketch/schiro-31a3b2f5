@@ -127,11 +127,13 @@
 
   html {
     font-feature-settings: "ss01" 1, "ss02" 1, "cv10" 1;
+    overflow-x: clip;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: theme(fontFamily.sans);
+    overflow-x: clip;
   }
 }
 
