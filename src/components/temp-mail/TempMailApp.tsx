@@ -215,6 +215,30 @@ export default function TempMailApp() {
     [ownedInboxes, selectedClaimedAddress],
   );
 
+  const recoverClaimedInboxAfterUnauthorized = useCallback(async () => {
+    if (!user || !selectedClaimedInbox) return false;
+
+    const [claimedLocalPart, claimedDomain] = selectedClaimedInbox.address.split("@");
+    if (!claimedLocalPart || !claimedDomain || !availableDomains.includes(claimedDomain as Domain)) return false;
+
+    try {
+      const recreated = await createInbox({ domain: claimedDomain as Domain, localPart: claimedLocalPart });
+      setAddress(recreated.address);
+      setToken(recreated.token);
+      setExpiresAt(recreated.expiresAt);
+      setSelectedDomain(claimedDomain as Domain);
+      saveInbox(recreated);
+
+      const res = await listMessages({ address: recreated.address, token: recreated.token });
+      setEmails(res.messages);
+      setExpiresAt(res.expiresAt);
+      setActiveId(res.messages[0]?.id ?? null);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [user, selectedClaimedInbox, availableDomains]);
+
   const heroRef = useRef<HTMLDivElement | null>(null);
   const inboxSectionRef = useRef<HTMLElement | null>(null);
   const creatingGuestInboxRef = useRef(false);
