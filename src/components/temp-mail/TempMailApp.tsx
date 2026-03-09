@@ -834,7 +834,7 @@ export default function TempMailApp() {
                       Check out my other sites
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[22rem] p-0" align="center">
+                  <PopoverContent className="w-[min(22rem,calc(100vw-1.5rem))] p-0" align="center">
                     <Card className="border-0 shadow-none">
                       <div className="space-y-3 p-4">
                         <div className="text-sm font-semibold">Visit my other projects</div>
@@ -842,7 +842,7 @@ export default function TempMailApp() {
                           <Button
                             asChild
                             variant="hero"
-                            className="w-full justify-start shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
+                            className="w-full justify-start whitespace-normal break-words text-left shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
                           >
                             <a href="https://schiro.eu.cc" target="_blank" rel="noopener noreferrer">
                               Schiro Cookie Checker - Netflix Checker
@@ -851,7 +851,7 @@ export default function TempMailApp() {
                           <Button
                             asChild
                             variant="hero"
-                            className="w-full justify-start shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
+                            className="w-full justify-start whitespace-normal break-words text-left shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
                           >
                             <a href="https://schiropaste.lovable.app" target="_blank" rel="noopener noreferrer">
                               Schiropaste - Paste and Share
@@ -887,7 +887,7 @@ export default function TempMailApp() {
         </div>
       </header>
 
-      <main className="container max-w-6xl py-6 md:py-8">
+      <main className="container max-w-6xl px-3 py-6 sm:px-8 md:py-8">
         {isLoggedIn ? (
           <Card className="mb-4">
             <div className="border-b p-4">
@@ -907,7 +907,7 @@ export default function TempMailApp() {
                       onValueChange={(value) => void handleClaimedAddressSelect(value)}
                       disabled={loadingInbox || deletingOwnedAddress === selectedClaimedInbox.address}
                     >
-                      <SelectTrigger className="flex-1 text-mono">
+                      <SelectTrigger className="min-w-0 flex-1 text-mono">
                         <SelectValue placeholder="Pick claimed email" />
                       </SelectTrigger>
                       <SelectContent>
