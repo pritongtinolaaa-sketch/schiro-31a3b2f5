@@ -366,11 +366,14 @@ export default function TempMailApp() {
         return next;
       });
     } catch (e: any) {
+      if (isUnauthorizedError(e) && (await recoverClaimedInboxAfterUnauthorized())) {
+        return;
+      }
       toast.error("Couldn't load inbox", { description: e?.message ?? "Please try again." });
     } finally {
       setLoadingMessages(false);
     }
-  }, [address, token]);
+  }, [address, token, recoverClaimedInboxAfterUnauthorized]);
 
   const refreshOwnedInboxes = useCallback(async () => {
     if (!user) {
