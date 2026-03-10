@@ -215,6 +215,8 @@ export default function TempMailApp() {
   const [authPassword, setAuthPassword] = useState("");
   const [authDisplayName, setAuthDisplayName] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState<string | null>(null);
   const [ownedInboxes, setOwnedInboxes] = useState<OwnedInbox[]>([]);
   const [loadingOwnedInboxes, setLoadingOwnedInboxes] = useState(false);
   const [selectedClaimedAddress, setSelectedClaimedAddress] = useState<string | null>(null);
@@ -738,9 +740,13 @@ export default function TempMailApp() {
           password: authPassword,
         });
         if (error) throw error;
+
+        setPendingConfirmationEmail(null);
+        setIsAuthDialogOpen(false);
+        setAuthPassword("");
         toast.success("Logged in");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: authEmail,
           password: authPassword,
           options: {
@@ -752,15 +758,45 @@ export default function TempMailApp() {
           },
         });
         if (error) throw error;
-        toast.success("Account created", { description: "Check your email to verify your account." });
-      }
 
-      setIsAuthDialogOpen(false);
-      setAuthPassword("");
+        setAuthPassword("");
+        const email = authEmail.trim();
+        setPendingConfirmationEmail(email || null);
+
+        if (data.session) {
+          setIsAuthDialogOpen(false);
+          toast.success("Account created");
+        } else {
+          setAuthMode("login");
+          toast.success("Account created", { description: "Check your email to verify your account." });
+        }
+      }
     } catch (e: any) {
       toast.error("Authentication failed", { description: e?.message ?? "Please try again." });
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!pendingConfirmationEmail) return;
+
+    setResendLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: pendingConfirmationEmail,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+
+      toast.success("Confirmation email resent", { description: pendingConfirmationEmail });
+    } catch (e: any) {
+      toast.error("Couldn't resend confirmation", { description: e?.message ?? "Please try again." });
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -1222,14 +1258,33 @@ export default function TempMailApp() {
               required
             />
 
-            <Button type="submit" variant="hero" disabled={authLoading}>
+            {pendingConfirmationEmail ? (
+              <div className="rounded-md border bg-secondary/40 p-3 text-xs text-muted-foreground">
+                <p>Didn&apos;t get the confirmation email?</p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => void handleResendConfirmation()}
+                  disabled={authLoading || resendLoading}
+                >
+                  {resendLoading ? "Resending..." : "Resend confirmation email"}
+                </Button>
+              </div>
+            ) : null}
+
+            <Button type="submit" variant="hero" disabled={authLoading || resendLoading}>
               {authLoading ? "Please wait..." : authMode === "login" ? "Login" : "Create account"}
             </Button>
             <Button
               type="button"
               variant="ghost"
-              onClick={() => setAuthMode((m) => (m === "login" ? "signup" : "login"))}
-              disabled={authLoading}
+              onClick={() => {
+                setPendingConfirmationEmail(null);
+                setAuthMode((m) => (m === "login" ? "signup" : "login"));
+              }}
+              disabled={authLoading || resendLoading}
             >
               {authMode === "login" ? "Need an account? Sign up" : "Already have an account? Login"}
             </Button>
