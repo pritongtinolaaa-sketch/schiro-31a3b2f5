@@ -1258,14 +1258,33 @@ export default function TempMailApp() {
               required
             />
 
-            <Button type="submit" variant="hero" disabled={authLoading}>
+            {pendingConfirmationEmail ? (
+              <div className="rounded-md border bg-secondary/40 p-3 text-xs text-muted-foreground">
+                <p>Didn&apos;t get the confirmation email?</p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => void handleResendConfirmation()}
+                  disabled={authLoading || resendLoading}
+                >
+                  {resendLoading ? "Resending..." : "Resend confirmation email"}
+                </Button>
+              </div>
+            ) : null}
+
+            <Button type="submit" variant="hero" disabled={authLoading || resendLoading}>
               {authLoading ? "Please wait..." : authMode === "login" ? "Login" : "Create account"}
             </Button>
             <Button
               type="button"
               variant="ghost"
-              onClick={() => setAuthMode((m) => (m === "login" ? "signup" : "login"))}
-              disabled={authLoading}
+              onClick={() => {
+                setPendingConfirmationEmail(null);
+                setAuthMode((m) => (m === "login" ? "signup" : "login"));
+              }}
+              disabled={authLoading || resendLoading}
             >
               {authMode === "login" ? "Need an account? Sign up" : "Already have an account? Login"}
             </Button>
