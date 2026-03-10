@@ -1159,33 +1159,38 @@ export default function TempMailApp() {
             }}
           >
             {authMode === "login" ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void handleGoogleSignIn()}
-                disabled={authLoading}
-                className="gap-2"
-              >
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" focusable="false">
-                  <path
-                    fill="currentColor"
-                    d="M21.6 12.23c0-.68-.06-1.33-.17-1.96H12v3.71h5.39a4.62 4.62 0 0 1-2 3.04v2.52h3.23c1.89-1.74 2.98-4.3 2.98-7.31Z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 22c2.7 0 4.96-.9 6.61-2.46l-3.23-2.52c-.9.6-2.04.95-3.38.95-2.6 0-4.8-1.75-5.58-4.1H3.07v2.58A10 10 0 0 0 12 22Z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M6.42 13.87a5.99 5.99 0 0 1 0-3.74V7.55H3.07a10 10 0 0 0 0 8.9l3.35-2.58Z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 6.03c1.47 0 2.8.5 3.85 1.5l2.88-2.88C16.95 2.98 14.7 2 12 2a10 10 0 0 0-8.93 5.55l3.35 2.58c.78-2.35 2.98-4.1 5.58-4.1Z"
-                  />
-                </svg>
-                Continue with Google
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void handleGoogleSignIn()}
+                  disabled={authLoading}
+                  className="gap-2"
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" focusable="false">
+                    <path
+                      fill="currentColor"
+                      d="M21.6 12.23c0-.68-.06-1.33-.17-1.96H12v3.71h5.39a4.62 4.62 0 0 1-2 3.04v2.52h3.23c1.89-1.74 2.98-4.3 2.98-7.31Z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 22c2.7 0 4.96-.9 6.61-2.46l-3.23-2.52c-.9.6-2.04.95-3.38.95-2.6 0-4.8-1.75-5.58-4.1H3.07v2.58A10 10 0 0 0 12 22Z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M6.42 13.87a5.99 5.99 0 0 1 0-3.74V7.55H3.07a10 10 0 0 0 0 8.9l3.35-2.58Z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 6.03c1.47 0 2.8.5 3.85 1.5l2.88-2.88C16.95 2.98 14.7 2 12 2a10 10 0 0 0-8.93 5.55l3.35 2.58c.78-2.35 2.98-4.1 5.58-4.1Z"
+                    />
+                  </svg>
+                  Continue with Google
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  If Google says "disallowed_useragent", open this page in Chrome or Safari.
+                </p>
+              </>
             ) : null}
 
             {authMode === "login" ? <div className="text-center text-xs text-muted-foreground">or use email</div> : null}
