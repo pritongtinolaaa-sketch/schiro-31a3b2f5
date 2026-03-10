@@ -740,9 +740,13 @@ export default function TempMailApp() {
           password: authPassword,
         });
         if (error) throw error;
+
+        setPendingConfirmationEmail(null);
+        setIsAuthDialogOpen(false);
+        setAuthPassword("");
         toast.success("Logged in");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: authEmail,
           password: authPassword,
           options: {
@@ -754,15 +758,45 @@ export default function TempMailApp() {
           },
         });
         if (error) throw error;
-        toast.success("Account created", { description: "Check your email to verify your account." });
-      }
 
-      setIsAuthDialogOpen(false);
-      setAuthPassword("");
+        setAuthPassword("");
+        const email = authEmail.trim();
+        setPendingConfirmationEmail(email || null);
+
+        if (data.session) {
+          setIsAuthDialogOpen(false);
+          toast.success("Account created");
+        } else {
+          setAuthMode("login");
+          toast.success("Account created", { description: "Check your email to verify your account." });
+        }
+      }
     } catch (e: any) {
       toast.error("Authentication failed", { description: e?.message ?? "Please try again." });
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!pendingConfirmationEmail) return;
+
+    setResendLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: pendingConfirmationEmail,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+
+      toast.success("Confirmation email resent", { description: pendingConfirmationEmail });
+    } catch (e: any) {
+      toast.error("Couldn't resend confirmation", { description: e?.message ?? "Please try again." });
+    } finally {
+      setResendLoading(false);
     }
   };
 
