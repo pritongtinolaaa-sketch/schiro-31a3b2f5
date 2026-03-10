@@ -215,6 +215,8 @@ export default function TempMailApp() {
   const [authPassword, setAuthPassword] = useState("");
   const [authDisplayName, setAuthDisplayName] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState<string | null>(null);
   const [ownedInboxes, setOwnedInboxes] = useState<OwnedInbox[]>([]);
   const [loadingOwnedInboxes, setLoadingOwnedInboxes] = useState(false);
   const [selectedClaimedAddress, setSelectedClaimedAddress] = useState<string | null>(null);
