@@ -171,6 +171,22 @@ function isUnauthorizedError(error: unknown) {
   return /\b401\b|unauthorized/i.test(String(anyError?.message ?? ""));
 }
 
+function isGoogleDisallowedUserAgentError(error: unknown) {
+  const message = String((error as { message?: string })?.message ?? "").toLowerCase();
+  return message.includes("disallowed_useragent") || message.includes("use secure browsers");
+}
+
+function isLikelyInAppBrowser() {
+  if (typeof navigator === "undefined") return false;
+
+  const ua = navigator.userAgent.toLowerCase();
+  const markers = ["instagram", "fban", "fbav", "line/", "snapchat", "micromessenger", "wv"]; // common in-app/webview markers
+  const hasMarker = markers.some((marker) => ua.includes(marker));
+  const iosWebView = /(iphone|ipad|ipod)/.test(ua) && !ua.includes("safari");
+
+  return hasMarker || iosWebView;
+}
+
 export default function TempMailApp() {
   const prefersReducedMotion = usePrefersReducedMotion();
 
