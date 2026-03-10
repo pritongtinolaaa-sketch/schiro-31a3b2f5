@@ -765,6 +765,13 @@ export default function TempMailApp() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (isLikelyInAppBrowser()) {
+      toast.error("Google sign-in is blocked in this browser", {
+        description: "Open this page in Chrome or Safari, or use email login here.",
+      });
+      return;
+    }
+
     setAuthLoading(true);
     try {
       const { error } = await lovable.auth.signInWithOAuth("google", {
@@ -772,7 +779,11 @@ export default function TempMailApp() {
       });
       if (error) throw error;
     } catch (e: any) {
-      toast.error("Google sign-in failed", { description: e?.message ?? "Please try again." });
+      toast.error("Google sign-in failed", {
+        description: isGoogleDisallowedUserAgentError(e)
+          ? "Google blocked this browser. Open in Chrome/Safari or continue with email login."
+          : e?.message ?? "Please try again.",
+      });
       setAuthLoading(false);
     }
   };
