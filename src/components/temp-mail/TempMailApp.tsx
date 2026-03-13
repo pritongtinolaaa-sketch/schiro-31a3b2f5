@@ -941,7 +941,7 @@ export default function TempMailApp() {
                             variant="hero"
                             className="w-full justify-start whitespace-normal break-words text-left shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
                           >
-                            <a href="https://schiro.eu.cc" target="_blank" rel="noopener noreferrer">
+                            <a href="https://schiro.dev" target="_blank" rel="noopener noreferrer">
                               Schiro Cookie Checker - Netflix Checker
                             </a>
                           </Button>
