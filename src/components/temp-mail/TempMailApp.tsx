@@ -954,6 +954,15 @@ export default function TempMailApp() {
                               Schiropaste - Paste and Share
                             </a>
                           </Button>
+                          <Button
+                            asChild
+                            variant="hero"
+                            className="w-full justify-start whitespace-normal break-words text-left shadow-elev transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0.5"
+                          >
+                            <a href="https://schiropdf.replit.app" target="_blank" rel="noopener noreferrer">
+                              SchiroPDF - PDF tools
+                            </a>
+                          </Button>
                         </div>
                       </div>
                     </Card>
