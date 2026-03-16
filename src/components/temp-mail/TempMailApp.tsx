@@ -922,6 +922,7 @@ export default function TempMailApp() {
     String(user?.user_metadata?.username ?? user?.user_metadata?.display_name ?? user?.email?.split("@")[0] ?? "Profile");
   const isOwner =
     (session?.user.id != null && session.user.id === OWNER_USER_ID) || profileLabel.trim().toLowerCase() === "schiro";
+  const showMaintenanceScreen = maintenanceMode && !isAdmin;
 
   return (
     <div className="min-h-screen overflow-x-hidden">
