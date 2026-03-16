@@ -620,6 +620,10 @@ export default function TempMailApp() {
   }, [loadAvailableDomains]);
 
   useEffect(() => {
+    void loadMaintenanceSettings();
+  }, [loadMaintenanceSettings]);
+
+  useEffect(() => {
     if (selectedDomain && availableDomains.includes(selectedDomain)) return;
     setSelectedDomain(availableDomains[0] ?? null);
   }, [availableDomains, selectedDomain]);
