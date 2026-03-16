@@ -437,7 +437,7 @@ export default function TempMailApp() {
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [loadProfile]);
+  }, [loadProfile, loadAdminStatus]);
 
   const refreshMessages = useCallback(async (opts?: { silent?: boolean }) => {
     if (!address || !token) return;
