@@ -334,6 +334,69 @@ export default function TempMailApp() {
     setProfileName(data?.display_name ?? null);
   }, []);
 
+  const loadAdminStatus = useCallback(async (nextUser: User | null) => {
+    if (!nextUser) {
+      setIsAdmin(false);
+      return;
+    }
+
+    const { data, error } = await (supabase as any)
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", nextUser.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (error) {
+      setIsAdmin(false);
+      return;
+    }
+
+    setIsAdmin(Boolean(data));
+  }, []);
+
+  const loadMaintenanceSettings = useCallback(async () => {
+    setLoadingMaintenance(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("site_settings")
+        .select("maintenance_mode, maintenance_message")
+        .eq("id", true)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      setMaintenanceMode(Boolean(data?.maintenance_mode));
+      setMaintenanceMessage(String(data?.maintenance_message ?? "UNDER MAINTENANCE"));
+    } catch {
+      setMaintenanceMode(false);
+      setMaintenanceMessage("UNDER MAINTENANCE");
+    } finally {
+      setLoadingMaintenance(false);
+    }
+  }, []);
+
+  const handleMaintenanceToggle = async (checked: boolean) => {
+    if (!user || !isAdmin) return;
+
+    setMaintenanceUpdating(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("site_settings")
+        .update({ maintenance_mode: checked, updated_by: user.id })
+        .eq("id", true);
+
+      if (error) throw error;
+
+      setMaintenanceMode(checked);
+      toast.success(checked ? "Maintenance mode enabled" : "Maintenance mode disabled");
+    } catch (e: any) {
+      toast.error("Couldn't update maintenance mode", { description: e?.message ?? "Please try again." });
+    } finally {
+      setMaintenanceUpdating(false);
+    }
+  };
+
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event, currentSession) => {
       setSession(currentSession);
