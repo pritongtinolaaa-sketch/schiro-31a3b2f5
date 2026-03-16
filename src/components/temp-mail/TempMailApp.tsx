@@ -946,6 +946,17 @@ export default function TempMailApp() {
                   OWNER
                 </Badge>
               ) : null}
+              {isAdmin ? (
+                <div className="flex items-center gap-2 rounded-md border bg-background px-2 py-1">
+                  <span className="text-xs font-medium">Maintenance</span>
+                  <Switch
+                    checked={maintenanceMode}
+                    onCheckedChange={(checked) => void handleMaintenanceToggle(checked)}
+                    disabled={loadingMaintenance || maintenanceUpdating}
+                    aria-label="Toggle maintenance mode"
+                  />
+                </div>
+              ) : null}
               <Button variant="outline" size="sm" onClick={() => void handleSignOut()}>
                 Sign out
               </Button>
