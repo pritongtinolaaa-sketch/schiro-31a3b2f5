@@ -969,7 +969,29 @@ export default function TempMailApp() {
         </div>
       </nav>
 
-      <header ref={heroRef} className="relative overflow-hidden border-b bg-hero">
+      {showMaintenanceScreen ? (
+        <main className="container flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col items-center justify-center px-3 py-10 text-center sm:px-8">
+          <Card className="w-full max-w-2xl p-6 sm:p-10">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">UNDER MAINTENANCE</h1>
+            <p className="mt-3 text-sm text-muted-foreground sm:text-base">
+              {maintenanceMessage || "We&apos;re doing scheduled updates. Please check back soon."}
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              {!isLoggedIn ? (
+                <Button variant="hero" onClick={() => setIsAuthDialogOpen(true)} disabled={loadingMaintenance}>
+                  Admin login
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => void handleSignOut()}>
+                  Sign out
+                </Button>
+              )}
+            </div>
+          </Card>
+        </main>
+      ) : (
+        <>
+          <header ref={heroRef} className="relative overflow-hidden border-b bg-hero">
         <div className="pointer-events-none absolute inset-0 opacity-70" />
         <div className="container relative max-w-6xl px-3 py-8 sm:px-8 md:py-10">
           <div className="grid gap-6 md:grid-cols-12 md:items-start">
