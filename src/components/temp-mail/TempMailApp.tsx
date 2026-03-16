@@ -419,6 +419,8 @@ export default function TempMailApp() {
       } else {
         setProfileName(null);
       }
+
+      void loadAdminStatus(nextUser);
     });
 
     void supabase.auth.getSession().then(({ data }) => {
@@ -430,6 +432,7 @@ export default function TempMailApp() {
       } else {
         setProfileName(null);
       }
+      void loadAdminStatus(nextUser);
       setAuthReady(true);
     });
 
