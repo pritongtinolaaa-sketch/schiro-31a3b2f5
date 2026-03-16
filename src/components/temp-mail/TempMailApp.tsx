@@ -1294,6 +1294,8 @@ export default function TempMailApp() {
           <p>© Schiro 2026</p>
         </footer>
       </main>
+        </>
+      )}
 
       <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
         <DialogContent>
