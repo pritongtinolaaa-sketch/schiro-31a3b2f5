@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 import InboxCreatorCard, { type Domain } from "@/components/temp-mail/InboxCreatorCard";
 
@@ -222,6 +223,11 @@ export default function TempMailApp() {
   const [selectedClaimedAddress, setSelectedClaimedAddress] = useState<string | null>(null);
   const [claimedSeenMap, setClaimedSeenMap] = useState<ClaimedSeenMap>({});
   const [deletingOwnedAddress, setDeletingOwnedAddress] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState("UNDER MAINTENANCE");
+  const [loadingMaintenance, setLoadingMaintenance] = useState(true);
+  const [maintenanceUpdating, setMaintenanceUpdating] = useState(false);
 
   useEffect(() => {
     if (!activeId && emails[0]?.id) setActiveId(emails[0].id);
@@ -328,6 +334,69 @@ export default function TempMailApp() {
     setProfileName(data?.display_name ?? null);
   }, []);
 
+  const loadAdminStatus = useCallback(async (nextUser: User | null) => {
+    if (!nextUser) {
+      setIsAdmin(false);
+      return;
+    }
+
+    const { data, error } = await (supabase as any)
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", nextUser.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (error) {
+      setIsAdmin(false);
+      return;
+    }
+
+    setIsAdmin(Boolean(data));
+  }, []);
+
+  const loadMaintenanceSettings = useCallback(async () => {
+    setLoadingMaintenance(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("site_settings")
+        .select("maintenance_mode, maintenance_message")
+        .eq("id", true)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      setMaintenanceMode(Boolean(data?.maintenance_mode));
+      setMaintenanceMessage(String(data?.maintenance_message ?? "UNDER MAINTENANCE"));
+    } catch {
+      setMaintenanceMode(false);
+      setMaintenanceMessage("UNDER MAINTENANCE");
+    } finally {
+      setLoadingMaintenance(false);
+    }
+  }, []);
+
+  const handleMaintenanceToggle = async (checked: boolean) => {
+    if (!user || !isAdmin) return;
+
+    setMaintenanceUpdating(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("site_settings")
+        .update({ maintenance_mode: checked, updated_by: user.id })
+        .eq("id", true);
+
+      if (error) throw error;
+
+      setMaintenanceMode(checked);
+      toast.success(checked ? "Maintenance mode enabled" : "Maintenance mode disabled");
+    } catch (e: any) {
+      toast.error("Couldn't update maintenance mode", { description: e?.message ?? "Please try again." });
+    } finally {
+      setMaintenanceUpdating(false);
+    }
+  };
+
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event, currentSession) => {
       setSession(currentSession);
@@ -350,6 +419,8 @@ export default function TempMailApp() {
       } else {
         setProfileName(null);
       }
+
+      void loadAdminStatus(nextUser);
     });
 
     void supabase.auth.getSession().then(({ data }) => {
@@ -361,11 +432,12 @@ export default function TempMailApp() {
       } else {
         setProfileName(null);
       }
+      void loadAdminStatus(nextUser);
       setAuthReady(true);
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [loadProfile]);
+  }, [loadProfile, loadAdminStatus]);
 
   const refreshMessages = useCallback(async (opts?: { silent?: boolean }) => {
     if (!address || !token) return;
@@ -546,6 +618,10 @@ export default function TempMailApp() {
   useEffect(() => {
     void loadAvailableDomains();
   }, [loadAvailableDomains]);
+
+  useEffect(() => {
+    void loadMaintenanceSettings();
+  }, [loadMaintenanceSettings]);
 
   useEffect(() => {
     if (selectedDomain && availableDomains.includes(selectedDomain)) return;
@@ -846,6 +922,7 @@ export default function TempMailApp() {
     String(user?.user_metadata?.username ?? user?.user_metadata?.display_name ?? user?.email?.split("@")[0] ?? "Profile");
   const isOwner =
     (session?.user.id != null && session.user.id === OWNER_USER_ID) || profileLabel.trim().toLowerCase() === "schiro";
+  const showMaintenanceScreen = maintenanceMode && !isAdmin;
 
   return (
     <div className="min-h-screen overflow-x-hidden">
@@ -869,6 +946,17 @@ export default function TempMailApp() {
                   OWNER
                 </Badge>
               ) : null}
+              {isAdmin ? (
+                <div className="flex items-center gap-2 rounded-md border bg-background px-2 py-1">
+                  <span className="text-xs font-medium">Maintenance</span>
+                  <Switch
+                    checked={maintenanceMode}
+                    onCheckedChange={(checked) => void handleMaintenanceToggle(checked)}
+                    disabled={loadingMaintenance || maintenanceUpdating}
+                    aria-label="Toggle maintenance mode"
+                  />
+                </div>
+              ) : null}
               <Button variant="outline" size="sm" onClick={() => void handleSignOut()}>
                 Sign out
               </Button>
@@ -881,7 +969,29 @@ export default function TempMailApp() {
         </div>
       </nav>
 
-      <header ref={heroRef} className="relative overflow-hidden border-b bg-hero">
+      {showMaintenanceScreen ? (
+        <main className="container flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col items-center justify-center px-3 py-10 text-center sm:px-8">
+          <Card className="w-full max-w-2xl p-6 sm:p-10">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">UNDER MAINTENANCE</h1>
+            <p className="mt-3 text-sm text-muted-foreground sm:text-base">
+              {maintenanceMessage || "We&apos;re doing scheduled updates. Please check back soon."}
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              {!isLoggedIn ? (
+                <Button variant="hero" onClick={() => setIsAuthDialogOpen(true)} disabled={loadingMaintenance}>
+                  Admin login
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => void handleSignOut()}>
+                  Sign out
+                </Button>
+              )}
+            </div>
+          </Card>
+        </main>
+      ) : (
+        <>
+          <header ref={heroRef} className="relative overflow-hidden border-b bg-hero">
         <div className="pointer-events-none absolute inset-0 opacity-70" />
         <div className="container relative max-w-6xl px-3 py-8 sm:px-8 md:py-10">
           <div className="grid gap-6 md:grid-cols-12 md:items-start">
@@ -1184,6 +1294,8 @@ export default function TempMailApp() {
           <p>© Schiro 2026</p>
         </footer>
       </main>
+        </>
+      )}
 
       <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
         <DialogContent>
