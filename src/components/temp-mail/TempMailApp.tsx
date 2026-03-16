@@ -223,6 +223,11 @@ export default function TempMailApp() {
   const [selectedClaimedAddress, setSelectedClaimedAddress] = useState<string | null>(null);
   const [claimedSeenMap, setClaimedSeenMap] = useState<ClaimedSeenMap>({});
   const [deletingOwnedAddress, setDeletingOwnedAddress] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState("UNDER MAINTENANCE");
+  const [loadingMaintenance, setLoadingMaintenance] = useState(true);
+  const [maintenanceUpdating, setMaintenanceUpdating] = useState(false);
 
   useEffect(() => {
     if (!activeId && emails[0]?.id) setActiveId(emails[0].id);
