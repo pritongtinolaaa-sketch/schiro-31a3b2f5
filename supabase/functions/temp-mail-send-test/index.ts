@@ -58,7 +58,33 @@ function makeDemoEmail() {
   const from = senders[Math.floor(Math.random() * senders.length)];
   const subject = subjects[Math.floor(Math.random() * subjects.length)];
   const code = String(Math.floor(Math.random() * 900000) + 100000);
-  const body = `Hi there,\n\nThis is a real stored message in your temporary inbox.\n\nVerification code: ${code}\n\n— schiromail`;
+  const body = `<!doctype html>
+<html>
+  <body style="margin:0;padding:24px;background:#f5f7fb;font-family:Arial,sans-serif;color:#111827;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e5e7eb;">
+            <tr>
+              <td style="padding:0;">
+                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1400&auto=format&fit=crop" alt="Header" style="display:block;width:100%;height:auto;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px;">
+                <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">Your one-time code</h1>
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">This is a rich HTML test email with image + button support.</p>
+                <p style="margin:0 0 18px;font-size:28px;font-weight:700;letter-spacing:2px;">${code}</p>
+                <a href="https://schiro.dev" style="display:inline-block;padding:12px 18px;background:#0f172a;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600;">Open dashboard</a>
+                <p style="margin:18px 0 0;font-size:13px;color:#6b7280;">If you didn’t request this, you can ignore this email.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
   return { from_address: from, subject, body };
 }
 
