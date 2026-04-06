@@ -161,6 +161,10 @@ function htmlToText(input: string) {
   );
 }
 
+function isLikelyHtmlDocument(input: string) {
+  return /<!doctype\s+html/i.test(input) || /<html[\s>]/i.test(input) || /<body[\s>]/i.test(input) || /<img[\s>]/i.test(input) || /<a[\s>]/i.test(input) || /<\/\w+>/.test(input);
+}
+
 function splitHeadersAndBody(part: string) {
   const normalized = part.replace(/\r\n/g, "\n");
   const idx = normalized.indexOf("\n\n");
@@ -294,13 +298,11 @@ function normalizeBody(input: unknown) {
   if (!raw) return "";
 
   const extracted = extractReadableBody(raw);
+  if (isLikelyHtmlDocument(extracted)) return extracted;
   if (looksLikeBase64Block(extracted)) {
     const decoded = decodeBase64(extracted);
     if (decoded) {
-      if (looksLikeHtml(decoded)) {
-        const text = htmlToText(decoded).trim();
-        if (text) return text;
-      }
+      if (isLikelyHtmlDocument(decoded)) return decoded;
 
       const repaired = pickBestReadable([decodeHtmlEntities(decoded), repairMojibakeUtf8(decoded)], 0.55);
       if (repaired) return repaired;
@@ -318,10 +320,7 @@ function decodeMessageBody(rawInput: unknown) {
   if (compact.length > 80 && /^[A-Za-z0-9+/=]+$/.test(compact)) {
     const decoded = decodeBase64(raw);
     if (decoded) {
-      if (looksLikeHtml(decoded)) {
-        const text = htmlToText(decoded).trim();
-        if (text) return text;
-      }
+      if (isLikelyHtmlDocument(decoded)) return decoded;
 
       const repaired = pickBestReadable([decodeHtmlEntities(decoded), repairMojibakeUtf8(decoded)], 0.55);
       if (repaired) return repaired;
@@ -329,6 +328,7 @@ function decodeMessageBody(rawInput: unknown) {
   }
 
   const normalized = normalizeBody(raw);
+  if (isLikelyHtmlDocument(normalized)) return normalized;
   const repaired = pickBestReadable([normalized, repairMojibakeUtf8(normalized)], 0.6);
   if (repaired) return repaired;
 
@@ -337,7 +337,8 @@ function decodeMessageBody(rawInput: unknown) {
 
 function toMessageRow(row: any) {
   const body = decodeMessageBody(row.body);
-  const previewLine = body.split("\n").find((l) => l.trim().length > 0) ?? body.slice(0, 80);
+  const previewSource = isLikelyHtmlDocument(body) ? htmlToText(body) : body;
+  const previewLine = previewSource.split("\n").find((l) => l.trim().length > 0) ?? previewSource.slice(0, 80);
   return {
     id: row.id,
     from: row.from_address,
