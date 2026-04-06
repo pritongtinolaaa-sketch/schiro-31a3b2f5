@@ -138,8 +138,7 @@ function collectReadableBodies(rawPart: string, plain: string[], html: string[],
 
   if (contentType.includes("text/plain")) {
     if (!hasExplicitContentType && looksLikeHtml(decoded)) {
-      const text = htmlToText(decoded);
-      if (text) html.push(text);
+      html.push(decoded);
       return;
     }
     plain.push(decoded);
@@ -147,8 +146,7 @@ function collectReadableBodies(rawPart: string, plain: string[], html: string[],
   }
 
   if (contentType.includes("text/html")) {
-    const text = htmlToText(decoded);
-    if (text) html.push(text);
+    html.push(decoded);
   }
 }
 
@@ -167,8 +165,7 @@ function extractReadableBody(raw: string) {
   if (!fallback) return normalized.trim();
 
   if (looksLikeHtml(fallback)) {
-    const text = htmlToText(fallback);
-    return text || fallback;
+    return fallback;
   }
 
   return fallback;

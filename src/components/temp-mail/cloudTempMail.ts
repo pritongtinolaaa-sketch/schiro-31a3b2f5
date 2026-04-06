@@ -164,20 +164,23 @@ function htmlToText(input: string) {
     .trim();
 }
 
+function looksLikeHtml(input: string) {
+  return /<!doctype\s+html/i.test(input) || /<html[\s>]/i.test(input) || /<body[\s>]/i.test(input) || /<\/\w+>/.test(input);
+}
+
 function normalizeIncomingBody(body: string) {
   const raw = String(body ?? "").trim();
   if (!raw) return "";
 
-  if (/<[^>]+>/.test(raw)) {
-    const text = htmlToText(raw);
-    if (text) return text;
+  if (looksLikeHtml(raw)) {
+    return raw;
   }
 
   const compact = raw.replace(/\s+/g, "");
   if (compact.length > 120 && /^[A-Za-z0-9+/=_-]+$/.test(compact)) {
     const decoded = decodeBase64Utf8(compact);
     if (decoded) {
-      return /<[^>]+>/.test(decoded) ? htmlToText(decoded) : decoded;
+      return decoded;
     }
     return "Message body is encoded/binary and could not be decoded safely.";
   }
@@ -200,7 +203,8 @@ export async function listMessages(input: { address: string; token: string }): P
 
   const messages = data.messages.map((message) => {
     const body = normalizeIncomingBody(message.body);
-    const preview = body.split("\n").find((line) => line.trim().length > 0)?.trim() ?? message.preview;
+    const previewText = looksLikeHtml(body) ? htmlToText(body) : body;
+    const preview = previewText.split("\n").find((line) => line.trim().length > 0)?.trim() ?? message.preview;
     return { ...message, body, preview };
   });
 

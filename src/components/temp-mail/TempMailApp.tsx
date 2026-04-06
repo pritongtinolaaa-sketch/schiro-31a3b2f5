@@ -143,6 +143,23 @@ function decodeBodyForDisplay(input: string) {
   return raw;
 }
 
+function looksLikeHtmlMessage(input: string) {
+  return /<!doctype\s+html/i.test(input) || /<html[\s>]/i.test(input) || /<body[\s>]/i.test(input) || /<\/\w+>/.test(input);
+}
+
+function sanitizeEmailHtml(input: string) {
+  return input
+    .replace(/<(script|iframe|object|embed|form|meta|base|link)\b[\s\S]*?<\/\1>/gi, "")
+    .replace(/<(script|iframe|object|embed|form|meta|base|link)\b[^>]*\/?>/gi, "")
+    .replace(/\s+on[a-z]+\s*=\s*"[^"]*"/gi, "")
+    .replace(/\s+on[a-z]+\s*=\s*'[^']*'/gi, "")
+    .replace(/\s+on[a-z]+\s*=\s*[^\s>]+/gi, "")
+    .replace(/\s+(href|src)\s*=\s*"\s*javascript:[^"]*"/gi, ' $1="#"')
+    .replace(/\s+(href|src)\s*=\s*'\s*javascript:[^']*'/gi, " $1='#'")
+    .replace(/\s+srcdoc\s*=\s*"[^"]*"/gi, "")
+    .replace(/\s+srcdoc\s*=\s*'[^']*'/gi, "");
+}
+
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
 
@@ -1273,7 +1290,16 @@ export default function TempMailApp() {
                   </div>
 
                   <div className="mt-5 rounded-xl border bg-background p-4 shadow-sm">
-                    <pre className="m-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-foreground">{decodeBodyForDisplay(active.body)}</pre>
+                    {looksLikeHtmlMessage(active.body) ? (
+                      <div
+                        className="max-w-full overflow-x-auto text-sm leading-relaxed text-foreground [&_a]:text-primary [&_a]:underline [&_img]:h-auto [&_img]:max-w-full"
+                        dangerouslySetInnerHTML={{ __html: sanitizeEmailHtml(active.body) }}
+                      />
+                    ) : (
+                      <pre className="m-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-foreground">
+                        {decodeBodyForDisplay(active.body)}
+                      </pre>
+                    )}
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
