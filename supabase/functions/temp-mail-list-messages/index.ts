@@ -238,8 +238,7 @@ function collectReadableBodies(rawPart: string, plain: string[], html: string[],
 
   if (contentType.includes("text/plain")) {
     if (!hasExplicitContentType && looksLikeHtml(decoded)) {
-      const text = htmlToText(decoded);
-      if (text && readabilityScore(text) > 0.55) html.push(text);
+      html.push(decoded);
       return;
     }
 
@@ -248,8 +247,7 @@ function collectReadableBodies(rawPart: string, plain: string[], html: string[],
   }
 
   if (contentType.includes("text/html")) {
-    const text = htmlToText(decoded);
-    if (text && readabilityScore(text) > 0.55) html.push(text);
+    html.push(decoded);
   }
 }
 
@@ -296,6 +294,7 @@ function looksLikeBase64Block(input: string) {
 function normalizeBody(input: unknown) {
   const raw = String(input ?? "").trim();
   if (!raw) return "";
+  if (isLikelyHtmlDocument(raw)) return raw;
 
   const extracted = extractReadableBody(raw);
   if (isLikelyHtmlDocument(extracted)) return extracted;
@@ -315,6 +314,7 @@ function normalizeBody(input: unknown) {
 function decodeMessageBody(rawInput: unknown) {
   const raw = String(rawInput ?? "").trim();
   if (!raw) return "";
+  if (isLikelyHtmlDocument(raw)) return raw;
 
   const compact = raw.replace(/\s+/g, "");
   if (compact.length > 80 && /^[A-Za-z0-9+/=]+$/.test(compact)) {
